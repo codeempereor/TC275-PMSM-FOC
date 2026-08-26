@@ -1,0 +1,45 @@
+# 大目录 - 不跟踪
+02_Examples/
+03_Resources/
+05_Reference_Project/
+
+# 工程内的例程
+01_Project/TC275_demo/AURIX_code_examples-master/
+
+# 编译产物
+**/Debug/
+**/Release/
+*.o
+*.elf
+*.lst
+*.src
+*.d
+*.opt
+*.map
+*.abs
+*.hex
+*.bin
+
+# IDE / 工具
+.metadata/
+.settings/
+.project
+.cproject
+*.swp
+*.tmp
+*.log
+
+# 第三方 MCAL/BSW 库（只跟踪 _02_CDD 自研代码）
+01_Project/TC275_demo/project/TC275/_01_BSW/
+01_Project/TC275_demo/project/TC275/_03_MCAL/
+01_Project/TC275_demo/project/TC275/Linker/
+
+# _04_StartUp 只跟踪 BrsMain.c
+01_Project/TC275_demo/project/TC275/_04_StartUp/*
+!01_Project/TC275_demo/project/TC275/_04_StartUp/BrsMain.c
+!01_Project/TC275_demo/project/TC275/_04_StartUp/BrsMain.h
+
+# 系统
+Thumbs.db
+Desktop.ini
+.DS_Store
