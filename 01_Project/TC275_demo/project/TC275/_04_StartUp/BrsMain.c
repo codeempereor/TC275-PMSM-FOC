@@ -1,4 +1,4 @@
-
+﻿
 /**********************************************************************************************************************
   COPYRIGHT
 -----------------------------------------------------------------------------------------------------------------------
@@ -88,8 +88,17 @@
   #include "BrsHw.h"
 #endif
 
+extern void GtmPwm_Init(void);
+extern void GtmPwm_SetDuty(uint32 duty);
+
 #include "LedTest/led_test.h"
 #include "LedTest/uart_test.h"
+#include "Pwm_17_Gtm.h"
+#include "Mcal_WdgLib.h"
+#include "IfxGtm_reg.h"
+#include "IfxPort_reg.h"
+#include "LedTest/gtm_pwm.h"
+#include "Drv8305/drv8305_spi.h"
 
 //  #include "Can.h"
   /* if DrvCan with infix is used, change the header file accordingly (e.g. Can_30_Mcan.h) */
@@ -384,38 +393,74 @@ TASK(Default_Init_Task)
 #endif /*BRS_ENABLE_OS_MULTICORESUPPORT*/
 
 
-#if !defined (BRS_FBL_LEGACY) && !defined (BRS_FBL_NO_OSSCHEDULE)
+  /* ===== 先跑测试代码 ===== */
+LedTest_Init();
+  KeyTest_Init();
+  UartTest_Init();
+  UartTest_SendString("BrsMain start\r\n");
+
+  /* ===== DRV8305 SPI bit-bang 娴嬭瘯 ===== */
+  UartTest_SendString("Drv8305 SPI init...\r\n");
+  Drv8305Spi_Init();
+  {
+    uint16 r0 = Drv8305_ReadReg(0x00);
+    UartTest_SendHex("STAT1(0x00) = ", r0);
+    uint16 r1 = Drv8305_ReadReg(0x01);
+    UartTest_SendHex("STAT2(0x01) = ", r1);
+    uint16 r2 = Drv8305_ReadReg(0x02);
+    UartTest_SendHex("CTRL1(0x02) = ", r2);
+    UartTest_SendString("SPI test done\r\n");
+
+    /* LED1鎸囩ずSPI缁撴灉:
+       - 甯镐寒 = SPI鎴愬姛 (璇诲洖鍊煎悎鐞?
+       - 闂?娆″悗鐏?= SPI澶辫触 (鍏?鎴栧叏1) */
+    if (r0 == 0x0000u || r0 == 0x07FFu)
+    {
+      /* SPI澶辫触: LED1闂?娆?*/
+      for (int i = 0; i < 5; i++)
+      {
+        LedTest_SetLed1(1);
+        for(volatile uint32 j = 0; j < 500000; j++);
+        LedTest_SetLed1(0);
+        for(volatile uint32 j = 0; j < 500000; j++);
+      }
+    }
+    else
+    {
+      /* SPI鎴愬姛: LED1甯镐寒 */
+      LedTest_SetLed1(1);
+    }
+  }
+
+    /* Step 2: PWM on LED1 - 暂时注释，先测SPI */
+  /*
+  UartTest_SendString("GTM PWM init...\r\n");
+
+  /* 1. 使能GTM模块（ENDINIT保护），直接写整个寄存器 */
+  Mcal_ResetENDINIT();
+  MODULE_GTM.CLC.U = 0x00000000u;
+  Mcal_SetENDINIT();
+
+  /* 其他GTM PWM代码暂时注释... */
+
+  while(1)
+  {
+  }
+  */
+
+  /* 停在这里，看LED1状态 */
+  while(1)
+  {
+  }
+
+
+
+  #if !defined (BRS_FBL_LEGACY) && !defined (BRS_FBL_NO_OSSCHEDULE)
   EcuM_StartupTwo();
 
   Os_InitialEnableInterruptSources(FALSE);
 #endif
-
-  LedTest_Init();
-  KeyTest_Init();
-  UartTest_Init();
-  UartTest_SendString("TC275 UART HelloWorld!\r\n");
-
-  {
-    uint32 cnt = 0;
-    while(1)
-    {
-      if (KeyTest_Read())
-        LedTest_SetLed1(1);
-      else
-        LedTest_SetLed1(0);
-
-      LedTest_ToggleLed2();
-
-      cnt++;
-      UartTest_SendString("cnt=");
-      UartTest_SendUint32(cnt);
-      UartTest_SendString("\r\n");
-
-      for(volatile uint32 i = 0; i < 5000000; i++);
-    }
-  }
-
-  (void)TerminateTask();
+(void)TerminateTask();
 }
 
 #if defined (BRS_ENABLE_OS_MULTICORESUPPORT)

@@ -1,16 +1,16 @@
 #ifndef FOC_CONFIG_H
 #define FOC_CONFIG_H
 
-#define FOC_PWM_FREQ_HZ           10000.0f
+#define FOC_PWM_FREQ_HZ           20000.0f
 #define FOC_PWM_PERIOD_SEC        (1.0f / FOC_PWM_FREQ_HZ)
 #define FOC_ISR_FREQ_HZ           FOC_PWM_FREQ_HZ
 #define FOC_ISR_PERIOD_SEC        FOC_PWM_PERIOD_SEC
 #define FOC_SPEED_LOOP_FREQ_HZ    1000.0f
 #define FOC_SPEED_LOOP_DIV        (FOC_ISR_FREQ_HZ / FOC_SPEED_LOOP_FREQ_HZ)
 
-#define FOC_POLE_PAIRS            4
-#define FOC_ENCODER_LINES         2500
-#define FOC_ENCODER_RESOLUTION    (FOC_ENCODER_LINES * 4)
+#define FOC_POLE_PAIRS            7
+#define FOC_ENCODER_LINES         16384
+#define FOC_ENCODER_RESOLUTION    16384.0f
 
 #define FOC_MAX_DUTY              0.95f
 #define FOC_MIN_DUTY              0.05f
@@ -34,7 +34,7 @@
 
 #define FOC_ADC_VREF_V            3.3f
 #define FOC_ADC_RESOLUTION        4095.0f
-#define FOC_SHUNT_RESISTOR_OHM    0.01f
+#define FOC_SHUNT_RESISTOR_OHM    0.007f
 #define FOC_AMP_GAIN              10.0f
 #define FOC_ADC_TO_AMP            (FOC_ADC_VREF_V / FOC_ADC_RESOLUTION)
 #define FOC_AMP_TO_CURRENT        (1.0f / (FOC_SHUNT_RESISTOR_OHM * FOC_AMP_GAIN))

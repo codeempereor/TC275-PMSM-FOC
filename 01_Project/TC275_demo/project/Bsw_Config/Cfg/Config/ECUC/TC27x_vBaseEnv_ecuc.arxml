@@ -1,0 +1,994 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<AUTOSAR xmlns="http://autosar.org/schema/r4.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://autosar.org/schema/r4.0 AUTOSAR_00046.xsd">
+  <AR-PACKAGES>
+    <AR-PACKAGE>
+      <SHORT-NAME>ActiveEcuC</SHORT-NAME>
+      <ELEMENTS>
+        <ECUC-MODULE-CONFIGURATION-VALUES UUID="06e3104c-1341-4c5e-84a4-30928ba9f634">
+          <SHORT-NAME>vBaseEnv</SHORT-NAME>
+          <DEFINITION-REF DEST="ECUC-MODULE-DEF">/MICROSAR/vBaseEnv</DEFINITION-REF>
+          <IMPLEMENTATION-CONFIG-VARIANT>VARIANT-PRE-COMPILE</IMPLEMENTATION-CONFIG-VARIANT>
+          <MODULE-DESCRIPTION-REF DEST="BSW-IMPLEMENTATION">/MICROSAR/vBaseEnv_Impl</MODULE-DESCRIPTION-REF>
+          <CONTAINERS>
+            <ECUC-CONTAINER-VALUE UUID="baf31a5b-6f44-409c-a72d-cf756c1d5803">
+              <SHORT-NAME>vBaseEnvGeneral</SHORT-NAME>
+              <DEFINITION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral</DEFINITION-REF>
+              <REFERENCE-VALUES>
+                <ECUC-REFERENCE-VALUE>
+                  <DEFINITION-REF DEST="ECUC-REFERENCE-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvTestedDerivativeRef</DEFINITION-REF>
+                  <VALUE-REF DEST="ECUC-CONTAINER-VALUE">/ActiveEcuC/vBaseEnv/vBaseEnvGeneral/TC275</VALUE-REF>
+                </ECUC-REFERENCE-VALUE>
+              </REFERENCE-VALUES>
+              <SUB-CONTAINERS>
+                <ECUC-CONTAINER-VALUE UUID="c34350dd-8b7f-487a-b40d-bac348a3ff2e">
+                  <SHORT-NAME>TC237</SHORT-NAME>
+                  <DEFINITION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation</DEFINITION-REF>
+                  <PARAMETER-VALUES>
+                    <ECUC-NUMERICAL-PARAM-VALUE>
+                      <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvCpuCoreAmount</DEFINITION-REF>
+                      <VALUE>1</VALUE>
+                    </ECUC-NUMERICAL-PARAM-VALUE>
+                    <ECUC-NUMERICAL-PARAM-VALUE>
+                      <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvCpuMaxFrequency</DEFINITION-REF>
+                      <VALUE>200</VALUE>
+                    </ECUC-NUMERICAL-PARAM-VALUE>
+                    <ECUC-TEXTUAL-PARAM-VALUE>
+                      <DEFINITION-REF DEST="ECUC-STRING-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvTestedDerivative</DEFINITION-REF>
+                      <VALUE>TC23x</VALUE>
+                    </ECUC-TEXTUAL-PARAM-VALUE>
+                    <ECUC-TEXTUAL-PARAM-VALUE>
+                      <DEFINITION-REF DEST="ECUC-STRING-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvTestedDerivativeDescription</DEFINITION-REF>
+                      <VALUE>Infineon Aurix TC23x Family</VALUE>
+                    </ECUC-TEXTUAL-PARAM-VALUE>
+                    <ECUC-NUMERICAL-PARAM-VALUE>
+                      <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvAvailableChannels_Can</DEFINITION-REF>
+                      <VALUE>6</VALUE>
+                    </ECUC-NUMERICAL-PARAM-VALUE>
+                    <ECUC-NUMERICAL-PARAM-VALUE>
+                      <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvAvailableChannels_Ethernet</DEFINITION-REF>
+                      <VALUE>1</VALUE>
+                    </ECUC-NUMERICAL-PARAM-VALUE>
+                    <ECUC-NUMERICAL-PARAM-VALUE>
+                      <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvAvailableChannels_Flexray</DEFINITION-REF>
+                      <VALUE>2</VALUE>
+                    </ECUC-NUMERICAL-PARAM-VALUE>
+                    <ECUC-NUMERICAL-PARAM-VALUE>
+                      <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvAvailableChannels_Lin</DEFINITION-REF>
+                      <VALUE>2</VALUE>
+                    </ECUC-NUMERICAL-PARAM-VALUE>
+                    <ECUC-TEXTUAL-PARAM-VALUE>
+                      <DEFINITION-REF DEST="ECUC-ENUMERATION-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvCpuCore</DEFINITION-REF>
+                      <VALUE>TC161</VALUE>
+                    </ECUC-TEXTUAL-PARAM-VALUE>
+                  </PARAMETER-VALUES>
+                  <SUB-CONTAINERS>
+                    <ECUC-CONTAINER-VALUE UUID="91f471f1-8067-41ee-b3ab-f2ba7d030c75">
+                      <SHORT-NAME>DSPR0</SHORT-NAME>
+                      <DEFINITION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion</DEFINITION-REF>
+                      <PARAMETER-VALUES>
+                        <ECUC-NUMERICAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion/vBaseEnvHwRegionStartAddress</DEFINITION-REF>
+                          <VALUE>1879048192</VALUE>
+                        </ECUC-NUMERICAL-PARAM-VALUE>
+                        <ECUC-NUMERICAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion/vBaseEnvHwRegionSize</DEFINITION-REF>
+                          <VALUE>188416</VALUE>
+                        </ECUC-NUMERICAL-PARAM-VALUE>
+                      </PARAMETER-VALUES>
+                    </ECUC-CONTAINER-VALUE>
+                    <ECUC-CONTAINER-VALUE UUID="1a5a68c9-5ef3-40be-b4e9-ba12270f4017">
+                      <SHORT-NAME>PSPR0</SHORT-NAME>
+                      <DEFINITION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion</DEFINITION-REF>
+                      <PARAMETER-VALUES>
+                        <ECUC-NUMERICAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion/vBaseEnvHwRegionStartAddress</DEFINITION-REF>
+                          <VALUE>1880096768</VALUE>
+                        </ECUC-NUMERICAL-PARAM-VALUE>
+                        <ECUC-NUMERICAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion/vBaseEnvHwRegionSize</DEFINITION-REF>
+                          <VALUE>8192</VALUE>
+                        </ECUC-NUMERICAL-PARAM-VALUE>
+                      </PARAMETER-VALUES>
+                    </ECUC-CONTAINER-VALUE>
+                    <ECUC-CONTAINER-VALUE UUID="f560fb90-4ec2-4a3b-a1f3-73899ef6da7a">
+                      <SHORT-NAME>PFlash0_Cached</SHORT-NAME>
+                      <DEFINITION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion</DEFINITION-REF>
+                      <PARAMETER-VALUES>
+                        <ECUC-NUMERICAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion/vBaseEnvHwRegionStartAddress</DEFINITION-REF>
+                          <VALUE>2147483648</VALUE>
+                        </ECUC-NUMERICAL-PARAM-VALUE>
+                        <ECUC-NUMERICAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion/vBaseEnvHwRegionSize</DEFINITION-REF>
+                          <VALUE>2097152</VALUE>
+                        </ECUC-NUMERICAL-PARAM-VALUE>
+                      </PARAMETER-VALUES>
+                    </ECUC-CONTAINER-VALUE>
+                    <ECUC-CONTAINER-VALUE UUID="92ce4ae7-3724-4b77-8f13-ffb6901ab124">
+                      <SHORT-NAME>PFlash0_NonCached</SHORT-NAME>
+                      <DEFINITION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion</DEFINITION-REF>
+                      <PARAMETER-VALUES>
+                        <ECUC-NUMERICAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion/vBaseEnvHwRegionStartAddress</DEFINITION-REF>
+                          <VALUE>2684354560</VALUE>
+                        </ECUC-NUMERICAL-PARAM-VALUE>
+                        <ECUC-NUMERICAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion/vBaseEnvHwRegionSize</DEFINITION-REF>
+                          <VALUE>2097152</VALUE>
+                        </ECUC-NUMERICAL-PARAM-VALUE>
+                      </PARAMETER-VALUES>
+                    </ECUC-CONTAINER-VALUE>
+                    <ECUC-CONTAINER-VALUE UUID="ca872374-0ebd-4e12-99c6-26411c2b0e6a">
+                      <SHORT-NAME>vBaseEnvAdditionalParameters</SHORT-NAME>
+                      <DEFINITION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvAdditionalParameters</DEFINITION-REF>
+                      <PARAMETER-VALUES>
+                        <ECUC-TEXTUAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-ENUMERATION-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvAdditionalParameters/vBaseEnvWatchdogGroup</DEFINITION-REF>
+                          <VALUE>A</VALUE>
+                        </ECUC-TEXTUAL-PARAM-VALUE>
+                        <ECUC-TEXTUAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-ENUMERATION-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvAdditionalParameters/vBaseEnvPllGroup</DEFINITION-REF>
+                          <VALUE>A</VALUE>
+                        </ECUC-TEXTUAL-PARAM-VALUE>
+                        <ECUC-TEXTUAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-ENUMERATION-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvAdditionalParameters/vBaseEnvPortGroup</DEFINITION-REF>
+                          <VALUE>A</VALUE>
+                        </ECUC-TEXTUAL-PARAM-VALUE>
+                        <ECUC-TEXTUAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-ENUMERATION-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvAdditionalParameters/vBaseEnvResetGroup</DEFINITION-REF>
+                          <VALUE>A</VALUE>
+                        </ECUC-TEXTUAL-PARAM-VALUE>
+                        <ECUC-TEXTUAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-STRING-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvAdditionalParameters/vBaseEnvDerivativeGroup</DEFINITION-REF>
+                          <VALUE>TC2xx</VALUE>
+                        </ECUC-TEXTUAL-PARAM-VALUE>
+                      </PARAMETER-VALUES>
+                    </ECUC-CONTAINER-VALUE>
+                    <ECUC-CONTAINER-VALUE UUID="e14598d4-d7b6-45d7-819b-cd4bd7110b84">
+                      <SHORT-NAME>BMHD0</SHORT-NAME>
+                      <DEFINITION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion</DEFINITION-REF>
+                      <PARAMETER-VALUES>
+                        <ECUC-NUMERICAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion/vBaseEnvHwRegionStartAddress</DEFINITION-REF>
+                          <VALUE>2684354560</VALUE>
+                        </ECUC-NUMERICAL-PARAM-VALUE>
+                        <ECUC-NUMERICAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion/vBaseEnvHwRegionSize</DEFINITION-REF>
+                          <VALUE>32</VALUE>
+                        </ECUC-NUMERICAL-PARAM-VALUE>
+                      </PARAMETER-VALUES>
+                    </ECUC-CONTAINER-VALUE>
+                    <ECUC-CONTAINER-VALUE UUID="9aeda0e7-c338-4122-89ac-aaa5991d3c60">
+                      <SHORT-NAME>BMHD1</SHORT-NAME>
+                      <DEFINITION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion</DEFINITION-REF>
+                      <PARAMETER-VALUES>
+                        <ECUC-NUMERICAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion/vBaseEnvHwRegionStartAddress</DEFINITION-REF>
+                          <VALUE>2684485632</VALUE>
+                        </ECUC-NUMERICAL-PARAM-VALUE>
+                        <ECUC-NUMERICAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion/vBaseEnvHwRegionSize</DEFINITION-REF>
+                          <VALUE>32</VALUE>
+                        </ECUC-NUMERICAL-PARAM-VALUE>
+                      </PARAMETER-VALUES>
+                    </ECUC-CONTAINER-VALUE>
+                    <ECUC-CONTAINER-VALUE UUID="8d1606bb-162f-46a0-b90e-6e4b283d86ba">
+                      <SHORT-NAME>BMHD2</SHORT-NAME>
+                      <DEFINITION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion</DEFINITION-REF>
+                      <PARAMETER-VALUES>
+                        <ECUC-NUMERICAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion/vBaseEnvHwRegionStartAddress</DEFINITION-REF>
+                          <VALUE>2684420064</VALUE>
+                        </ECUC-NUMERICAL-PARAM-VALUE>
+                        <ECUC-NUMERICAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion/vBaseEnvHwRegionSize</DEFINITION-REF>
+                          <VALUE>32</VALUE>
+                        </ECUC-NUMERICAL-PARAM-VALUE>
+                      </PARAMETER-VALUES>
+                    </ECUC-CONTAINER-VALUE>
+                    <ECUC-CONTAINER-VALUE UUID="4c590ff3-116f-43fb-8241-c20f71d1a153">
+                      <SHORT-NAME>BMHD3</SHORT-NAME>
+                      <DEFINITION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion</DEFINITION-REF>
+                      <PARAMETER-VALUES>
+                        <ECUC-NUMERICAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion/vBaseEnvHwRegionStartAddress</DEFINITION-REF>
+                          <VALUE>2684485600</VALUE>
+                        </ECUC-NUMERICAL-PARAM-VALUE>
+                        <ECUC-NUMERICAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion/vBaseEnvHwRegionSize</DEFINITION-REF>
+                          <VALUE>32</VALUE>
+                        </ECUC-NUMERICAL-PARAM-VALUE>
+                      </PARAMETER-VALUES>
+                    </ECUC-CONTAINER-VALUE>
+                    <ECUC-CONTAINER-VALUE UUID="9d0fcd78-5594-4313-a44b-94aeffa91106">
+                      <SHORT-NAME>STARTUP</SHORT-NAME>
+                      <DEFINITION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion</DEFINITION-REF>
+                      <PARAMETER-VALUES>
+                        <ECUC-NUMERICAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion/vBaseEnvHwRegionSize</DEFINITION-REF>
+                          <VALUE>32</VALUE>
+                        </ECUC-NUMERICAL-PARAM-VALUE>
+                        <ECUC-NUMERICAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion/vBaseEnvHwRegionStartAddress</DEFINITION-REF>
+                          <VALUE>2684354592</VALUE>
+                        </ECUC-NUMERICAL-PARAM-VALUE>
+                      </PARAMETER-VALUES>
+                    </ECUC-CONTAINER-VALUE>
+                  </SUB-CONTAINERS>
+                </ECUC-CONTAINER-VALUE>
+                <ECUC-CONTAINER-VALUE UUID="b19118a2-3fc3-4d09-9ab4-d83b01be2651">
+                  <SHORT-NAME>DSPR0</SHORT-NAME>
+                  <DEFINITION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvMemLayoutHwRegion</DEFINITION-REF>
+                </ECUC-CONTAINER-VALUE>
+                <ECUC-CONTAINER-VALUE UUID="c7f63872-1af5-453a-af96-2964b4642d3a">
+                  <SHORT-NAME>PSPR0</SHORT-NAME>
+                  <DEFINITION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvMemLayoutHwRegion</DEFINITION-REF>
+                </ECUC-CONTAINER-VALUE>
+                <ECUC-CONTAINER-VALUE UUID="bf2e0363-8262-40fb-b480-fbb3c0c2e5d0">
+                  <SHORT-NAME>PFlash0_Cached</SHORT-NAME>
+                  <DEFINITION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvMemLayoutHwRegion</DEFINITION-REF>
+                </ECUC-CONTAINER-VALUE>
+                <ECUC-CONTAINER-VALUE UUID="dfb93069-5047-4ad0-a762-653277f1833b">
+                  <SHORT-NAME>PFlash0_NonCached</SHORT-NAME>
+                  <DEFINITION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvMemLayoutHwRegion</DEFINITION-REF>
+                </ECUC-CONTAINER-VALUE>
+                <ECUC-CONTAINER-VALUE UUID="101f360b-e004-4c13-870b-366637458162">
+                  <SHORT-NAME>BMHD0</SHORT-NAME>
+                  <DEFINITION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvMemLayoutHwRegion</DEFINITION-REF>
+                </ECUC-CONTAINER-VALUE>
+                <ECUC-CONTAINER-VALUE UUID="666aeea1-882a-4fcc-a366-b565150cc600">
+                  <SHORT-NAME>BMHD1</SHORT-NAME>
+                  <DEFINITION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvMemLayoutHwRegion</DEFINITION-REF>
+                </ECUC-CONTAINER-VALUE>
+                <ECUC-CONTAINER-VALUE UUID="2fc8b852-e239-43d5-9e92-e7f85d5ed59a">
+                  <SHORT-NAME>BMHD2</SHORT-NAME>
+                  <DEFINITION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvMemLayoutHwRegion</DEFINITION-REF>
+                </ECUC-CONTAINER-VALUE>
+                <ECUC-CONTAINER-VALUE UUID="2e8f98d5-3661-4e7e-8c0b-5a0799fbdc98">
+                  <SHORT-NAME>BMHD3</SHORT-NAME>
+                  <DEFINITION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvMemLayoutHwRegion</DEFINITION-REF>
+                </ECUC-CONTAINER-VALUE>
+                <ECUC-CONTAINER-VALUE UUID="a4701f48-2f65-4b07-bd0e-f83b48d32795">
+                  <SHORT-NAME>STARTUP</SHORT-NAME>
+                  <DEFINITION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvMemLayoutHwRegion</DEFINITION-REF>
+                </ECUC-CONTAINER-VALUE>
+                <ECUC-CONTAINER-VALUE UUID="68951a90-6448-438b-bc3a-4fa3775f88f5">
+                  <SHORT-NAME>TC234</SHORT-NAME>
+                  <DEFINITION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation</DEFINITION-REF>
+                  <PARAMETER-VALUES>
+                    <ECUC-NUMERICAL-PARAM-VALUE>
+                      <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvCpuCoreAmount</DEFINITION-REF>
+                      <VALUE>1</VALUE>
+                    </ECUC-NUMERICAL-PARAM-VALUE>
+                    <ECUC-NUMERICAL-PARAM-VALUE>
+                      <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvCpuMaxFrequency</DEFINITION-REF>
+                      <VALUE>200</VALUE>
+                    </ECUC-NUMERICAL-PARAM-VALUE>
+                    <ECUC-TEXTUAL-PARAM-VALUE>
+                      <DEFINITION-REF DEST="ECUC-STRING-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvTestedDerivative</DEFINITION-REF>
+                      <VALUE>TC23x</VALUE>
+                    </ECUC-TEXTUAL-PARAM-VALUE>
+                    <ECUC-TEXTUAL-PARAM-VALUE>
+                      <DEFINITION-REF DEST="ECUC-STRING-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvTestedDerivativeDescription</DEFINITION-REF>
+                      <VALUE>Infineon Aurix TC23x Family</VALUE>
+                    </ECUC-TEXTUAL-PARAM-VALUE>
+                    <ECUC-NUMERICAL-PARAM-VALUE>
+                      <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvAvailableChannels_Can</DEFINITION-REF>
+                      <VALUE>6</VALUE>
+                    </ECUC-NUMERICAL-PARAM-VALUE>
+                    <ECUC-NUMERICAL-PARAM-VALUE>
+                      <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvAvailableChannels_Ethernet</DEFINITION-REF>
+                      <VALUE>1</VALUE>
+                    </ECUC-NUMERICAL-PARAM-VALUE>
+                    <ECUC-NUMERICAL-PARAM-VALUE>
+                      <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvAvailableChannels_Flexray</DEFINITION-REF>
+                      <VALUE>2</VALUE>
+                    </ECUC-NUMERICAL-PARAM-VALUE>
+                    <ECUC-NUMERICAL-PARAM-VALUE>
+                      <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvAvailableChannels_Lin</DEFINITION-REF>
+                      <VALUE>2</VALUE>
+                    </ECUC-NUMERICAL-PARAM-VALUE>
+                    <ECUC-TEXTUAL-PARAM-VALUE>
+                      <DEFINITION-REF DEST="ECUC-ENUMERATION-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvCpuCore</DEFINITION-REF>
+                      <VALUE>TC161</VALUE>
+                    </ECUC-TEXTUAL-PARAM-VALUE>
+                  </PARAMETER-VALUES>
+                  <SUB-CONTAINERS>
+                    <ECUC-CONTAINER-VALUE UUID="d9e5f389-a5fb-4725-b3ae-9935725964a1">
+                      <SHORT-NAME>DSPR0</SHORT-NAME>
+                      <DEFINITION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion</DEFINITION-REF>
+                      <PARAMETER-VALUES>
+                        <ECUC-NUMERICAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion/vBaseEnvHwRegionStartAddress</DEFINITION-REF>
+                          <VALUE>1879048192</VALUE>
+                        </ECUC-NUMERICAL-PARAM-VALUE>
+                        <ECUC-NUMERICAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion/vBaseEnvHwRegionSize</DEFINITION-REF>
+                          <VALUE>188416</VALUE>
+                        </ECUC-NUMERICAL-PARAM-VALUE>
+                      </PARAMETER-VALUES>
+                    </ECUC-CONTAINER-VALUE>
+                    <ECUC-CONTAINER-VALUE UUID="9c313d99-ef65-4d74-8924-137be3b849e6">
+                      <SHORT-NAME>PSPR0</SHORT-NAME>
+                      <DEFINITION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion</DEFINITION-REF>
+                      <PARAMETER-VALUES>
+                        <ECUC-NUMERICAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion/vBaseEnvHwRegionStartAddress</DEFINITION-REF>
+                          <VALUE>1880096768</VALUE>
+                        </ECUC-NUMERICAL-PARAM-VALUE>
+                        <ECUC-NUMERICAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion/vBaseEnvHwRegionSize</DEFINITION-REF>
+                          <VALUE>8192</VALUE>
+                        </ECUC-NUMERICAL-PARAM-VALUE>
+                      </PARAMETER-VALUES>
+                    </ECUC-CONTAINER-VALUE>
+                    <ECUC-CONTAINER-VALUE UUID="46caacb2-30fa-4dd5-86be-5df8e3361022">
+                      <SHORT-NAME>PFlash0_Cached</SHORT-NAME>
+                      <DEFINITION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion</DEFINITION-REF>
+                      <PARAMETER-VALUES>
+                        <ECUC-NUMERICAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion/vBaseEnvHwRegionStartAddress</DEFINITION-REF>
+                          <VALUE>2147483648</VALUE>
+                        </ECUC-NUMERICAL-PARAM-VALUE>
+                        <ECUC-NUMERICAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion/vBaseEnvHwRegionSize</DEFINITION-REF>
+                          <VALUE>2097152</VALUE>
+                        </ECUC-NUMERICAL-PARAM-VALUE>
+                      </PARAMETER-VALUES>
+                    </ECUC-CONTAINER-VALUE>
+                    <ECUC-CONTAINER-VALUE UUID="c383212a-ef32-48cd-b50c-0ba6e6b753f1">
+                      <SHORT-NAME>PFlash0_NonCached</SHORT-NAME>
+                      <DEFINITION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion</DEFINITION-REF>
+                      <PARAMETER-VALUES>
+                        <ECUC-NUMERICAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion/vBaseEnvHwRegionStartAddress</DEFINITION-REF>
+                          <VALUE>2684354560</VALUE>
+                        </ECUC-NUMERICAL-PARAM-VALUE>
+                        <ECUC-NUMERICAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion/vBaseEnvHwRegionSize</DEFINITION-REF>
+                          <VALUE>2097152</VALUE>
+                        </ECUC-NUMERICAL-PARAM-VALUE>
+                      </PARAMETER-VALUES>
+                    </ECUC-CONTAINER-VALUE>
+                    <ECUC-CONTAINER-VALUE UUID="3d523d57-dcd0-4f48-a8b1-d0ff5e15f688">
+                      <SHORT-NAME>vBaseEnvAdditionalParameters</SHORT-NAME>
+                      <DEFINITION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvAdditionalParameters</DEFINITION-REF>
+                      <PARAMETER-VALUES>
+                        <ECUC-TEXTUAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-ENUMERATION-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvAdditionalParameters/vBaseEnvWatchdogGroup</DEFINITION-REF>
+                          <VALUE>A</VALUE>
+                        </ECUC-TEXTUAL-PARAM-VALUE>
+                        <ECUC-TEXTUAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-ENUMERATION-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvAdditionalParameters/vBaseEnvPllGroup</DEFINITION-REF>
+                          <VALUE>A</VALUE>
+                        </ECUC-TEXTUAL-PARAM-VALUE>
+                        <ECUC-TEXTUAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-ENUMERATION-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvAdditionalParameters/vBaseEnvPortGroup</DEFINITION-REF>
+                          <VALUE>A</VALUE>
+                        </ECUC-TEXTUAL-PARAM-VALUE>
+                        <ECUC-TEXTUAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-ENUMERATION-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvAdditionalParameters/vBaseEnvResetGroup</DEFINITION-REF>
+                          <VALUE>A</VALUE>
+                        </ECUC-TEXTUAL-PARAM-VALUE>
+                        <ECUC-TEXTUAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-STRING-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvAdditionalParameters/vBaseEnvDerivativeGroup</DEFINITION-REF>
+                          <VALUE>TC2xx</VALUE>
+                        </ECUC-TEXTUAL-PARAM-VALUE>
+                      </PARAMETER-VALUES>
+                    </ECUC-CONTAINER-VALUE>
+                    <ECUC-CONTAINER-VALUE UUID="78452625-5b9b-421e-bf8a-3ada63ab0b1e">
+                      <SHORT-NAME>BMHD0</SHORT-NAME>
+                      <DEFINITION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion</DEFINITION-REF>
+                      <PARAMETER-VALUES>
+                        <ECUC-NUMERICAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion/vBaseEnvHwRegionStartAddress</DEFINITION-REF>
+                          <VALUE>2684354560</VALUE>
+                        </ECUC-NUMERICAL-PARAM-VALUE>
+                        <ECUC-NUMERICAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion/vBaseEnvHwRegionSize</DEFINITION-REF>
+                          <VALUE>32</VALUE>
+                        </ECUC-NUMERICAL-PARAM-VALUE>
+                      </PARAMETER-VALUES>
+                    </ECUC-CONTAINER-VALUE>
+                    <ECUC-CONTAINER-VALUE UUID="8b404c0c-8453-468a-bd2d-17e24358f9d3">
+                      <SHORT-NAME>BMHD1</SHORT-NAME>
+                      <DEFINITION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion</DEFINITION-REF>
+                      <PARAMETER-VALUES>
+                        <ECUC-NUMERICAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion/vBaseEnvHwRegionStartAddress</DEFINITION-REF>
+                          <VALUE>2684485632</VALUE>
+                        </ECUC-NUMERICAL-PARAM-VALUE>
+                        <ECUC-NUMERICAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion/vBaseEnvHwRegionSize</DEFINITION-REF>
+                          <VALUE>32</VALUE>
+                        </ECUC-NUMERICAL-PARAM-VALUE>
+                      </PARAMETER-VALUES>
+                    </ECUC-CONTAINER-VALUE>
+                    <ECUC-CONTAINER-VALUE UUID="3267e8a0-a54d-431a-9174-07006e91cfe6">
+                      <SHORT-NAME>BMHD2</SHORT-NAME>
+                      <DEFINITION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion</DEFINITION-REF>
+                      <PARAMETER-VALUES>
+                        <ECUC-NUMERICAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion/vBaseEnvHwRegionStartAddress</DEFINITION-REF>
+                          <VALUE>2684420064</VALUE>
+                        </ECUC-NUMERICAL-PARAM-VALUE>
+                        <ECUC-NUMERICAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion/vBaseEnvHwRegionSize</DEFINITION-REF>
+                          <VALUE>32</VALUE>
+                        </ECUC-NUMERICAL-PARAM-VALUE>
+                      </PARAMETER-VALUES>
+                    </ECUC-CONTAINER-VALUE>
+                    <ECUC-CONTAINER-VALUE UUID="9b859286-78cc-4df7-a4d5-93e19fbadf6d">
+                      <SHORT-NAME>BMHD3</SHORT-NAME>
+                      <DEFINITION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion</DEFINITION-REF>
+                      <PARAMETER-VALUES>
+                        <ECUC-NUMERICAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion/vBaseEnvHwRegionStartAddress</DEFINITION-REF>
+                          <VALUE>2684485600</VALUE>
+                        </ECUC-NUMERICAL-PARAM-VALUE>
+                        <ECUC-NUMERICAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion/vBaseEnvHwRegionSize</DEFINITION-REF>
+                          <VALUE>32</VALUE>
+                        </ECUC-NUMERICAL-PARAM-VALUE>
+                      </PARAMETER-VALUES>
+                    </ECUC-CONTAINER-VALUE>
+                    <ECUC-CONTAINER-VALUE UUID="36fadcf4-dff7-474d-9b52-cddecea082b2">
+                      <SHORT-NAME>STARTUP</SHORT-NAME>
+                      <DEFINITION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion</DEFINITION-REF>
+                      <PARAMETER-VALUES>
+                        <ECUC-NUMERICAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion/vBaseEnvHwRegionSize</DEFINITION-REF>
+                          <VALUE>32</VALUE>
+                        </ECUC-NUMERICAL-PARAM-VALUE>
+                        <ECUC-NUMERICAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion/vBaseEnvHwRegionStartAddress</DEFINITION-REF>
+                          <VALUE>2684354592</VALUE>
+                        </ECUC-NUMERICAL-PARAM-VALUE>
+                      </PARAMETER-VALUES>
+                    </ECUC-CONTAINER-VALUE>
+                  </SUB-CONTAINERS>
+                </ECUC-CONTAINER-VALUE>
+                <ECUC-CONTAINER-VALUE UUID="4f5748ef-71b0-46c9-9bca-c29130312aef">
+                  <SHORT-NAME>TC233</SHORT-NAME>
+                  <DEFINITION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation</DEFINITION-REF>
+                  <PARAMETER-VALUES>
+                    <ECUC-NUMERICAL-PARAM-VALUE>
+                      <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvCpuCoreAmount</DEFINITION-REF>
+                      <VALUE>1</VALUE>
+                    </ECUC-NUMERICAL-PARAM-VALUE>
+                    <ECUC-NUMERICAL-PARAM-VALUE>
+                      <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvCpuMaxFrequency</DEFINITION-REF>
+                      <VALUE>200</VALUE>
+                    </ECUC-NUMERICAL-PARAM-VALUE>
+                    <ECUC-TEXTUAL-PARAM-VALUE>
+                      <DEFINITION-REF DEST="ECUC-STRING-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvTestedDerivative</DEFINITION-REF>
+                      <VALUE>TC23x</VALUE>
+                    </ECUC-TEXTUAL-PARAM-VALUE>
+                    <ECUC-TEXTUAL-PARAM-VALUE>
+                      <DEFINITION-REF DEST="ECUC-STRING-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvTestedDerivativeDescription</DEFINITION-REF>
+                      <VALUE>Infineon Aurix TC23x Family</VALUE>
+                    </ECUC-TEXTUAL-PARAM-VALUE>
+                    <ECUC-NUMERICAL-PARAM-VALUE>
+                      <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvAvailableChannels_Can</DEFINITION-REF>
+                      <VALUE>6</VALUE>
+                    </ECUC-NUMERICAL-PARAM-VALUE>
+                    <ECUC-NUMERICAL-PARAM-VALUE>
+                      <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvAvailableChannels_Ethernet</DEFINITION-REF>
+                      <VALUE>1</VALUE>
+                    </ECUC-NUMERICAL-PARAM-VALUE>
+                    <ECUC-NUMERICAL-PARAM-VALUE>
+                      <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvAvailableChannels_Flexray</DEFINITION-REF>
+                      <VALUE>2</VALUE>
+                    </ECUC-NUMERICAL-PARAM-VALUE>
+                    <ECUC-NUMERICAL-PARAM-VALUE>
+                      <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvAvailableChannels_Lin</DEFINITION-REF>
+                      <VALUE>2</VALUE>
+                    </ECUC-NUMERICAL-PARAM-VALUE>
+                    <ECUC-TEXTUAL-PARAM-VALUE>
+                      <DEFINITION-REF DEST="ECUC-ENUMERATION-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvCpuCore</DEFINITION-REF>
+                      <VALUE>TC161</VALUE>
+                    </ECUC-TEXTUAL-PARAM-VALUE>
+                  </PARAMETER-VALUES>
+                  <SUB-CONTAINERS>
+                    <ECUC-CONTAINER-VALUE UUID="010b6fc0-8f28-4c40-86e1-90ea83239e83">
+                      <SHORT-NAME>DSPR0</SHORT-NAME>
+                      <DEFINITION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion</DEFINITION-REF>
+                      <PARAMETER-VALUES>
+                        <ECUC-NUMERICAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion/vBaseEnvHwRegionStartAddress</DEFINITION-REF>
+                          <VALUE>1879048192</VALUE>
+                        </ECUC-NUMERICAL-PARAM-VALUE>
+                        <ECUC-NUMERICAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion/vBaseEnvHwRegionSize</DEFINITION-REF>
+                          <VALUE>188416</VALUE>
+                        </ECUC-NUMERICAL-PARAM-VALUE>
+                      </PARAMETER-VALUES>
+                    </ECUC-CONTAINER-VALUE>
+                    <ECUC-CONTAINER-VALUE UUID="33c59622-049e-4fd1-8729-e3b65c2cd36e">
+                      <SHORT-NAME>PSPR0</SHORT-NAME>
+                      <DEFINITION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion</DEFINITION-REF>
+                      <PARAMETER-VALUES>
+                        <ECUC-NUMERICAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion/vBaseEnvHwRegionStartAddress</DEFINITION-REF>
+                          <VALUE>1880096768</VALUE>
+                        </ECUC-NUMERICAL-PARAM-VALUE>
+                        <ECUC-NUMERICAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion/vBaseEnvHwRegionSize</DEFINITION-REF>
+                          <VALUE>8192</VALUE>
+                        </ECUC-NUMERICAL-PARAM-VALUE>
+                      </PARAMETER-VALUES>
+                    </ECUC-CONTAINER-VALUE>
+                    <ECUC-CONTAINER-VALUE UUID="859b2487-89ee-4e99-b75a-8a33186c05e6">
+                      <SHORT-NAME>PFlash0_Cached</SHORT-NAME>
+                      <DEFINITION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion</DEFINITION-REF>
+                      <PARAMETER-VALUES>
+                        <ECUC-NUMERICAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion/vBaseEnvHwRegionStartAddress</DEFINITION-REF>
+                          <VALUE>2147483648</VALUE>
+                        </ECUC-NUMERICAL-PARAM-VALUE>
+                        <ECUC-NUMERICAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion/vBaseEnvHwRegionSize</DEFINITION-REF>
+                          <VALUE>2097152</VALUE>
+                        </ECUC-NUMERICAL-PARAM-VALUE>
+                      </PARAMETER-VALUES>
+                    </ECUC-CONTAINER-VALUE>
+                    <ECUC-CONTAINER-VALUE UUID="e7ad4e29-03cc-45af-b08a-81688ee16438">
+                      <SHORT-NAME>PFlash0_NonCached</SHORT-NAME>
+                      <DEFINITION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion</DEFINITION-REF>
+                      <PARAMETER-VALUES>
+                        <ECUC-NUMERICAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion/vBaseEnvHwRegionStartAddress</DEFINITION-REF>
+                          <VALUE>2684354560</VALUE>
+                        </ECUC-NUMERICAL-PARAM-VALUE>
+                        <ECUC-NUMERICAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion/vBaseEnvHwRegionSize</DEFINITION-REF>
+                          <VALUE>2097152</VALUE>
+                        </ECUC-NUMERICAL-PARAM-VALUE>
+                      </PARAMETER-VALUES>
+                    </ECUC-CONTAINER-VALUE>
+                    <ECUC-CONTAINER-VALUE UUID="5682629d-690f-4750-bf12-54a315d5a0dd">
+                      <SHORT-NAME>vBaseEnvAdditionalParameters</SHORT-NAME>
+                      <DEFINITION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvAdditionalParameters</DEFINITION-REF>
+                      <PARAMETER-VALUES>
+                        <ECUC-TEXTUAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-ENUMERATION-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvAdditionalParameters/vBaseEnvWatchdogGroup</DEFINITION-REF>
+                          <VALUE>A</VALUE>
+                        </ECUC-TEXTUAL-PARAM-VALUE>
+                        <ECUC-TEXTUAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-ENUMERATION-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvAdditionalParameters/vBaseEnvPllGroup</DEFINITION-REF>
+                          <VALUE>A</VALUE>
+                        </ECUC-TEXTUAL-PARAM-VALUE>
+                        <ECUC-TEXTUAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-ENUMERATION-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvAdditionalParameters/vBaseEnvPortGroup</DEFINITION-REF>
+                          <VALUE>A</VALUE>
+                        </ECUC-TEXTUAL-PARAM-VALUE>
+                        <ECUC-TEXTUAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-ENUMERATION-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvAdditionalParameters/vBaseEnvResetGroup</DEFINITION-REF>
+                          <VALUE>A</VALUE>
+                        </ECUC-TEXTUAL-PARAM-VALUE>
+                        <ECUC-TEXTUAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-STRING-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvAdditionalParameters/vBaseEnvDerivativeGroup</DEFINITION-REF>
+                          <VALUE>TC2xx</VALUE>
+                        </ECUC-TEXTUAL-PARAM-VALUE>
+                      </PARAMETER-VALUES>
+                    </ECUC-CONTAINER-VALUE>
+                    <ECUC-CONTAINER-VALUE UUID="9374d4a3-ed89-4100-a740-178aa3981064">
+                      <SHORT-NAME>BMHD0</SHORT-NAME>
+                      <DEFINITION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion</DEFINITION-REF>
+                      <PARAMETER-VALUES>
+                        <ECUC-NUMERICAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion/vBaseEnvHwRegionStartAddress</DEFINITION-REF>
+                          <VALUE>2684354560</VALUE>
+                        </ECUC-NUMERICAL-PARAM-VALUE>
+                        <ECUC-NUMERICAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion/vBaseEnvHwRegionSize</DEFINITION-REF>
+                          <VALUE>32</VALUE>
+                        </ECUC-NUMERICAL-PARAM-VALUE>
+                      </PARAMETER-VALUES>
+                    </ECUC-CONTAINER-VALUE>
+                    <ECUC-CONTAINER-VALUE UUID="9bafae20-76de-45fd-9f97-d4bcedf5e806">
+                      <SHORT-NAME>BMHD1</SHORT-NAME>
+                      <DEFINITION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion</DEFINITION-REF>
+                      <PARAMETER-VALUES>
+                        <ECUC-NUMERICAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion/vBaseEnvHwRegionStartAddress</DEFINITION-REF>
+                          <VALUE>2684485632</VALUE>
+                        </ECUC-NUMERICAL-PARAM-VALUE>
+                        <ECUC-NUMERICAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion/vBaseEnvHwRegionSize</DEFINITION-REF>
+                          <VALUE>32</VALUE>
+                        </ECUC-NUMERICAL-PARAM-VALUE>
+                      </PARAMETER-VALUES>
+                    </ECUC-CONTAINER-VALUE>
+                    <ECUC-CONTAINER-VALUE UUID="a8b9cc35-cbbf-4f7f-b831-a6673b60be7e">
+                      <SHORT-NAME>BMHD2</SHORT-NAME>
+                      <DEFINITION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion</DEFINITION-REF>
+                      <PARAMETER-VALUES>
+                        <ECUC-NUMERICAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion/vBaseEnvHwRegionStartAddress</DEFINITION-REF>
+                          <VALUE>2684420064</VALUE>
+                        </ECUC-NUMERICAL-PARAM-VALUE>
+                        <ECUC-NUMERICAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion/vBaseEnvHwRegionSize</DEFINITION-REF>
+                          <VALUE>32</VALUE>
+                        </ECUC-NUMERICAL-PARAM-VALUE>
+                      </PARAMETER-VALUES>
+                    </ECUC-CONTAINER-VALUE>
+                    <ECUC-CONTAINER-VALUE UUID="b0c181ed-354c-40fa-ba68-8101dc5157a2">
+                      <SHORT-NAME>BMHD3</SHORT-NAME>
+                      <DEFINITION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion</DEFINITION-REF>
+                      <PARAMETER-VALUES>
+                        <ECUC-NUMERICAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion/vBaseEnvHwRegionStartAddress</DEFINITION-REF>
+                          <VALUE>2684485600</VALUE>
+                        </ECUC-NUMERICAL-PARAM-VALUE>
+                        <ECUC-NUMERICAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion/vBaseEnvHwRegionSize</DEFINITION-REF>
+                          <VALUE>32</VALUE>
+                        </ECUC-NUMERICAL-PARAM-VALUE>
+                      </PARAMETER-VALUES>
+                    </ECUC-CONTAINER-VALUE>
+                    <ECUC-CONTAINER-VALUE UUID="567f35a2-9589-484b-b649-6f5a123296cc">
+                      <SHORT-NAME>STARTUP</SHORT-NAME>
+                      <DEFINITION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion</DEFINITION-REF>
+                      <PARAMETER-VALUES>
+                        <ECUC-NUMERICAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion/vBaseEnvHwRegionSize</DEFINITION-REF>
+                          <VALUE>32</VALUE>
+                        </ECUC-NUMERICAL-PARAM-VALUE>
+                        <ECUC-NUMERICAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion/vBaseEnvHwRegionStartAddress</DEFINITION-REF>
+                          <VALUE>2684354592</VALUE>
+                        </ECUC-NUMERICAL-PARAM-VALUE>
+                      </PARAMETER-VALUES>
+                    </ECUC-CONTAINER-VALUE>
+                  </SUB-CONTAINERS>
+                </ECUC-CONTAINER-VALUE>
+                <ECUC-CONTAINER-VALUE UUID="2ffe4075-5508-4af5-9d6b-d49b4763a8c3">
+                  <SHORT-NAME>TC275</SHORT-NAME>
+                  <DEFINITION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation</DEFINITION-REF>
+                  <PARAMETER-VALUES>
+                    <ECUC-NUMERICAL-PARAM-VALUE>
+                      <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvCpuCoreAmount</DEFINITION-REF>
+                      <VALUE>3</VALUE>
+                    </ECUC-NUMERICAL-PARAM-VALUE>
+                    <ECUC-NUMERICAL-PARAM-VALUE>
+                      <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvCpuMaxFrequency</DEFINITION-REF>
+                      <VALUE>200</VALUE>
+                    </ECUC-NUMERICAL-PARAM-VALUE>
+                    <ECUC-TEXTUAL-PARAM-VALUE>
+                      <DEFINITION-REF DEST="ECUC-STRING-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvTestedDerivative</DEFINITION-REF>
+                      <VALUE>TC27x</VALUE>
+                    </ECUC-TEXTUAL-PARAM-VALUE>
+                    <ECUC-TEXTUAL-PARAM-VALUE>
+                      <DEFINITION-REF DEST="ECUC-STRING-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvTestedDerivativeDescription</DEFINITION-REF>
+                      <VALUE>Infineon Aurix TC27x Family</VALUE>
+                    </ECUC-TEXTUAL-PARAM-VALUE>
+                    <ECUC-NUMERICAL-PARAM-VALUE>
+                      <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvAvailableChannels_Can</DEFINITION-REF>
+                      <VALUE>4</VALUE>
+                    </ECUC-NUMERICAL-PARAM-VALUE>
+                    <ECUC-NUMERICAL-PARAM-VALUE>
+                      <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvAvailableChannels_Ethernet</DEFINITION-REF>
+                      <VALUE>1</VALUE>
+                    </ECUC-NUMERICAL-PARAM-VALUE>
+                    <ECUC-NUMERICAL-PARAM-VALUE>
+                      <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvAvailableChannels_Flexray</DEFINITION-REF>
+                      <VALUE>2</VALUE>
+                    </ECUC-NUMERICAL-PARAM-VALUE>
+                    <ECUC-NUMERICAL-PARAM-VALUE>
+                      <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvAvailableChannels_Lin</DEFINITION-REF>
+                      <VALUE>2</VALUE>
+                    </ECUC-NUMERICAL-PARAM-VALUE>
+                    <ECUC-TEXTUAL-PARAM-VALUE>
+                      <DEFINITION-REF DEST="ECUC-ENUMERATION-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvCpuCore</DEFINITION-REF>
+                      <VALUE>TC161</VALUE>
+                    </ECUC-TEXTUAL-PARAM-VALUE>
+                  </PARAMETER-VALUES>
+                  <SUB-CONTAINERS>
+                    <ECUC-CONTAINER-VALUE UUID="3f066969-06ff-4a43-8b5f-011f453ab98b">
+                      <SHORT-NAME>DSPR0</SHORT-NAME>
+                      <DEFINITION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion</DEFINITION-REF>
+                      <PARAMETER-VALUES>
+                        <ECUC-NUMERICAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion/vBaseEnvHwRegionStartAddress</DEFINITION-REF>
+                          <VALUE>1879048192</VALUE>
+                        </ECUC-NUMERICAL-PARAM-VALUE>
+                        <ECUC-NUMERICAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion/vBaseEnvHwRegionSize</DEFINITION-REF>
+                          <VALUE>114688</VALUE>
+                        </ECUC-NUMERICAL-PARAM-VALUE>
+                      </PARAMETER-VALUES>
+                    </ECUC-CONTAINER-VALUE>
+                    <ECUC-CONTAINER-VALUE UUID="e16af85d-0367-4f80-be29-aa65b73640fe">
+                      <SHORT-NAME>PSPR0</SHORT-NAME>
+                      <DEFINITION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion</DEFINITION-REF>
+                      <PARAMETER-VALUES>
+                        <ECUC-NUMERICAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion/vBaseEnvHwRegionStartAddress</DEFINITION-REF>
+                          <VALUE>1880096768</VALUE>
+                        </ECUC-NUMERICAL-PARAM-VALUE>
+                        <ECUC-NUMERICAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion/vBaseEnvHwRegionSize</DEFINITION-REF>
+                          <VALUE>24576</VALUE>
+                        </ECUC-NUMERICAL-PARAM-VALUE>
+                      </PARAMETER-VALUES>
+                    </ECUC-CONTAINER-VALUE>
+                    <ECUC-CONTAINER-VALUE UUID="aa993c27-45e6-4a17-91e2-b03b0284b101">
+                      <SHORT-NAME>PFlash0_Cached</SHORT-NAME>
+                      <DEFINITION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion</DEFINITION-REF>
+                      <PARAMETER-VALUES>
+                        <ECUC-NUMERICAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion/vBaseEnvHwRegionStartAddress</DEFINITION-REF>
+                          <VALUE>2147483648</VALUE>
+                        </ECUC-NUMERICAL-PARAM-VALUE>
+                        <ECUC-NUMERICAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion/vBaseEnvHwRegionSize</DEFINITION-REF>
+                          <VALUE>2097152</VALUE>
+                        </ECUC-NUMERICAL-PARAM-VALUE>
+                      </PARAMETER-VALUES>
+                    </ECUC-CONTAINER-VALUE>
+                    <ECUC-CONTAINER-VALUE UUID="92941615-d6c8-4a4d-b36f-9270f329c6a6">
+                      <SHORT-NAME>PFlash0_NonCached</SHORT-NAME>
+                      <DEFINITION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion</DEFINITION-REF>
+                      <PARAMETER-VALUES>
+                        <ECUC-NUMERICAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion/vBaseEnvHwRegionStartAddress</DEFINITION-REF>
+                          <VALUE>2684354560</VALUE>
+                        </ECUC-NUMERICAL-PARAM-VALUE>
+                        <ECUC-NUMERICAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion/vBaseEnvHwRegionSize</DEFINITION-REF>
+                          <VALUE>2097152</VALUE>
+                        </ECUC-NUMERICAL-PARAM-VALUE>
+                      </PARAMETER-VALUES>
+                    </ECUC-CONTAINER-VALUE>
+                    <ECUC-CONTAINER-VALUE UUID="538ae671-664c-446a-961b-c34cace49b7f">
+                      <SHORT-NAME>vBaseEnvAdditionalParameters</SHORT-NAME>
+                      <DEFINITION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvAdditionalParameters</DEFINITION-REF>
+                      <PARAMETER-VALUES>
+                        <ECUC-TEXTUAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-ENUMERATION-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvAdditionalParameters/vBaseEnvWatchdogGroup</DEFINITION-REF>
+                          <VALUE>A</VALUE>
+                        </ECUC-TEXTUAL-PARAM-VALUE>
+                        <ECUC-TEXTUAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-ENUMERATION-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvAdditionalParameters/vBaseEnvPllGroup</DEFINITION-REF>
+                          <VALUE>A</VALUE>
+                        </ECUC-TEXTUAL-PARAM-VALUE>
+                        <ECUC-TEXTUAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-ENUMERATION-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvAdditionalParameters/vBaseEnvPortGroup</DEFINITION-REF>
+                          <VALUE>A</VALUE>
+                        </ECUC-TEXTUAL-PARAM-VALUE>
+                        <ECUC-TEXTUAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-ENUMERATION-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvAdditionalParameters/vBaseEnvResetGroup</DEFINITION-REF>
+                          <VALUE>A</VALUE>
+                        </ECUC-TEXTUAL-PARAM-VALUE>
+                        <ECUC-TEXTUAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-STRING-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvAdditionalParameters/vBaseEnvDerivativeGroup</DEFINITION-REF>
+                          <VALUE>TC2xx</VALUE>
+                        </ECUC-TEXTUAL-PARAM-VALUE>
+                      </PARAMETER-VALUES>
+                    </ECUC-CONTAINER-VALUE>
+                    <ECUC-CONTAINER-VALUE UUID="efae3261-4951-4d46-b02b-d6695980f764">
+                      <SHORT-NAME>BMHD0</SHORT-NAME>
+                      <DEFINITION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion</DEFINITION-REF>
+                      <PARAMETER-VALUES>
+                        <ECUC-NUMERICAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion/vBaseEnvHwRegionStartAddress</DEFINITION-REF>
+                          <VALUE>2684354560</VALUE>
+                        </ECUC-NUMERICAL-PARAM-VALUE>
+                        <ECUC-NUMERICAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion/vBaseEnvHwRegionSize</DEFINITION-REF>
+                          <VALUE>32</VALUE>
+                        </ECUC-NUMERICAL-PARAM-VALUE>
+                      </PARAMETER-VALUES>
+                    </ECUC-CONTAINER-VALUE>
+                    <ECUC-CONTAINER-VALUE UUID="b8547a67-7069-4cc2-b752-51640c7b626b">
+                      <SHORT-NAME>BMHD1</SHORT-NAME>
+                      <DEFINITION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion</DEFINITION-REF>
+                      <PARAMETER-VALUES>
+                        <ECUC-NUMERICAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion/vBaseEnvHwRegionStartAddress</DEFINITION-REF>
+                          <VALUE>2684485632</VALUE>
+                        </ECUC-NUMERICAL-PARAM-VALUE>
+                        <ECUC-NUMERICAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion/vBaseEnvHwRegionSize</DEFINITION-REF>
+                          <VALUE>32</VALUE>
+                        </ECUC-NUMERICAL-PARAM-VALUE>
+                      </PARAMETER-VALUES>
+                    </ECUC-CONTAINER-VALUE>
+                    <ECUC-CONTAINER-VALUE UUID="31032c6c-e766-4efb-b382-3a31e36bc486">
+                      <SHORT-NAME>BMHD2</SHORT-NAME>
+                      <DEFINITION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion</DEFINITION-REF>
+                      <PARAMETER-VALUES>
+                        <ECUC-NUMERICAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion/vBaseEnvHwRegionStartAddress</DEFINITION-REF>
+                          <VALUE>2684420064</VALUE>
+                        </ECUC-NUMERICAL-PARAM-VALUE>
+                        <ECUC-NUMERICAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion/vBaseEnvHwRegionSize</DEFINITION-REF>
+                          <VALUE>32</VALUE>
+                        </ECUC-NUMERICAL-PARAM-VALUE>
+                      </PARAMETER-VALUES>
+                    </ECUC-CONTAINER-VALUE>
+                    <ECUC-CONTAINER-VALUE UUID="6c8cba88-429c-46d5-b699-31b00b716a29">
+                      <SHORT-NAME>BMHD3</SHORT-NAME>
+                      <DEFINITION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion</DEFINITION-REF>
+                      <PARAMETER-VALUES>
+                        <ECUC-NUMERICAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion/vBaseEnvHwRegionStartAddress</DEFINITION-REF>
+                          <VALUE>2684485600</VALUE>
+                        </ECUC-NUMERICAL-PARAM-VALUE>
+                        <ECUC-NUMERICAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion/vBaseEnvHwRegionSize</DEFINITION-REF>
+                          <VALUE>32</VALUE>
+                        </ECUC-NUMERICAL-PARAM-VALUE>
+                      </PARAMETER-VALUES>
+                    </ECUC-CONTAINER-VALUE>
+                    <ECUC-CONTAINER-VALUE UUID="7f4f8086-8a88-45b9-a478-c3b6a25819e0">
+                      <SHORT-NAME>STARTUP</SHORT-NAME>
+                      <DEFINITION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion</DEFINITION-REF>
+                      <PARAMETER-VALUES>
+                        <ECUC-NUMERICAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion/vBaseEnvHwRegionSize</DEFINITION-REF>
+                          <VALUE>32</VALUE>
+                        </ECUC-NUMERICAL-PARAM-VALUE>
+                        <ECUC-NUMERICAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion/vBaseEnvHwRegionStartAddress</DEFINITION-REF>
+                          <VALUE>2684354592</VALUE>
+                        </ECUC-NUMERICAL-PARAM-VALUE>
+                      </PARAMETER-VALUES>
+                    </ECUC-CONTAINER-VALUE>
+                    <ECUC-CONTAINER-VALUE UUID="db442a56-5cbf-4413-83b2-4ca8fad104c6">
+                      <SHORT-NAME>PFlash1_Cached</SHORT-NAME>
+                      <DEFINITION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion</DEFINITION-REF>
+                      <PARAMETER-VALUES>
+                        <ECUC-NUMERICAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion/vBaseEnvHwRegionStartAddress</DEFINITION-REF>
+                          <VALUE>2149580800</VALUE>
+                        </ECUC-NUMERICAL-PARAM-VALUE>
+                        <ECUC-NUMERICAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion/vBaseEnvHwRegionSize</DEFINITION-REF>
+                          <VALUE>2097152</VALUE>
+                        </ECUC-NUMERICAL-PARAM-VALUE>
+                      </PARAMETER-VALUES>
+                    </ECUC-CONTAINER-VALUE>
+                    <ECUC-CONTAINER-VALUE UUID="27dc6fc4-e51b-4115-b616-e90d9db76c20">
+                      <SHORT-NAME>PFlash1_NonCached</SHORT-NAME>
+                      <DEFINITION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion</DEFINITION-REF>
+                      <PARAMETER-VALUES>
+                        <ECUC-NUMERICAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion/vBaseEnvHwRegionStartAddress</DEFINITION-REF>
+                          <VALUE>2686451712</VALUE>
+                        </ECUC-NUMERICAL-PARAM-VALUE>
+                        <ECUC-NUMERICAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion/vBaseEnvHwRegionSize</DEFINITION-REF>
+                          <VALUE>2097152</VALUE>
+                        </ECUC-NUMERICAL-PARAM-VALUE>
+                      </PARAMETER-VALUES>
+                    </ECUC-CONTAINER-VALUE>
+                    <ECUC-CONTAINER-VALUE UUID="7285cefa-20c1-4300-ae67-3e974ab0a76a">
+                      <SHORT-NAME>DSPR1</SHORT-NAME>
+                      <DEFINITION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion</DEFINITION-REF>
+                      <PARAMETER-VALUES>
+                        <ECUC-NUMERICAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion/vBaseEnvHwRegionStartAddress</DEFINITION-REF>
+                          <VALUE>1610612736</VALUE>
+                        </ECUC-NUMERICAL-PARAM-VALUE>
+                        <ECUC-NUMERICAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion/vBaseEnvHwRegionSize</DEFINITION-REF>
+                          <VALUE>122880</VALUE>
+                        </ECUC-NUMERICAL-PARAM-VALUE>
+                      </PARAMETER-VALUES>
+                    </ECUC-CONTAINER-VALUE>
+                    <ECUC-CONTAINER-VALUE UUID="8e107bd7-d310-47f1-8d87-e801cc535a58">
+                      <SHORT-NAME>DSPR2</SHORT-NAME>
+                      <DEFINITION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion</DEFINITION-REF>
+                      <PARAMETER-VALUES>
+                        <ECUC-NUMERICAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion/vBaseEnvHwRegionStartAddress</DEFINITION-REF>
+                          <VALUE>1342177280</VALUE>
+                        </ECUC-NUMERICAL-PARAM-VALUE>
+                        <ECUC-NUMERICAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion/vBaseEnvHwRegionSize</DEFINITION-REF>
+                          <VALUE>122880</VALUE>
+                        </ECUC-NUMERICAL-PARAM-VALUE>
+                      </PARAMETER-VALUES>
+                    </ECUC-CONTAINER-VALUE>
+                    <ECUC-CONTAINER-VALUE UUID="33d13616-eb4c-4936-a6b0-ac71fd7c7cdd">
+                      <SHORT-NAME>PSPR1</SHORT-NAME>
+                      <DEFINITION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion</DEFINITION-REF>
+                      <PARAMETER-VALUES>
+                        <ECUC-NUMERICAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion/vBaseEnvHwRegionStartAddress</DEFINITION-REF>
+                          <VALUE>1611661312</VALUE>
+                        </ECUC-NUMERICAL-PARAM-VALUE>
+                        <ECUC-NUMERICAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion/vBaseEnvHwRegionSize</DEFINITION-REF>
+                          <VALUE>32768</VALUE>
+                        </ECUC-NUMERICAL-PARAM-VALUE>
+                      </PARAMETER-VALUES>
+                    </ECUC-CONTAINER-VALUE>
+                    <ECUC-CONTAINER-VALUE UUID="877ebf5e-8d5f-4739-b481-b583413c41bf">
+                      <SHORT-NAME>PSPR2</SHORT-NAME>
+                      <DEFINITION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion</DEFINITION-REF>
+                      <PARAMETER-VALUES>
+                        <ECUC-NUMERICAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion/vBaseEnvHwRegionStartAddress</DEFINITION-REF>
+                          <VALUE>1343225856</VALUE>
+                        </ECUC-NUMERICAL-PARAM-VALUE>
+                        <ECUC-NUMERICAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion/vBaseEnvHwRegionSize</DEFINITION-REF>
+                          <VALUE>32768</VALUE>
+                        </ECUC-NUMERICAL-PARAM-VALUE>
+                      </PARAMETER-VALUES>
+                    </ECUC-CONTAINER-VALUE>
+                    <ECUC-CONTAINER-VALUE UUID="58b75e91-40f2-4ef3-8ac6-0c40fd34cd90">
+                      <SHORT-NAME>lmuram_Cahed</SHORT-NAME>
+                      <DEFINITION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion</DEFINITION-REF>
+                      <PARAMETER-VALUES>
+                        <ECUC-NUMERICAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion/vBaseEnvHwRegionStartAddress</DEFINITION-REF>
+                          <VALUE>2415919104</VALUE>
+                        </ECUC-NUMERICAL-PARAM-VALUE>
+                        <ECUC-NUMERICAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion/vBaseEnvHwRegionSize</DEFINITION-REF>
+                          <VALUE>32768</VALUE>
+                        </ECUC-NUMERICAL-PARAM-VALUE>
+                      </PARAMETER-VALUES>
+                    </ECUC-CONTAINER-VALUE>
+                    <ECUC-CONTAINER-VALUE UUID="19a7068f-9bbb-4d59-a5de-42319fe5da58">
+                      <SHORT-NAME>lmuram_NonCahed</SHORT-NAME>
+                      <DEFINITION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion</DEFINITION-REF>
+                      <PARAMETER-VALUES>
+                        <ECUC-NUMERICAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion/vBaseEnvHwRegionStartAddress</DEFINITION-REF>
+                          <VALUE>2952790016</VALUE>
+                        </ECUC-NUMERICAL-PARAM-VALUE>
+                        <ECUC-NUMERICAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvDerivativeInformation/vBaseEnvMemLayoutHwRegion/vBaseEnvHwRegionSize</DEFINITION-REF>
+                          <VALUE>32768</VALUE>
+                        </ECUC-NUMERICAL-PARAM-VALUE>
+                      </PARAMETER-VALUES>
+                    </ECUC-CONTAINER-VALUE>
+                  </SUB-CONTAINERS>
+                </ECUC-CONTAINER-VALUE>
+                <ECUC-CONTAINER-VALUE UUID="aa85627a-a20a-4595-8752-2558aa2c8073">
+                  <SHORT-NAME>DSPR1</SHORT-NAME>
+                  <DEFINITION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvMemLayoutHwRegion</DEFINITION-REF>
+                </ECUC-CONTAINER-VALUE>
+                <ECUC-CONTAINER-VALUE UUID="6f757f3a-be82-4492-8b3f-c4e5f310451c">
+                  <SHORT-NAME>DSPR2</SHORT-NAME>
+                  <DEFINITION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvMemLayoutHwRegion</DEFINITION-REF>
+                </ECUC-CONTAINER-VALUE>
+                <ECUC-CONTAINER-VALUE UUID="7122cb84-24ec-4a67-afff-4f744865eccc">
+                  <SHORT-NAME>PSPR1</SHORT-NAME>
+                  <DEFINITION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvMemLayoutHwRegion</DEFINITION-REF>
+                </ECUC-CONTAINER-VALUE>
+                <ECUC-CONTAINER-VALUE UUID="5a371888-d871-4313-8b5a-4acf855643ca">
+                  <SHORT-NAME>PSPR2</SHORT-NAME>
+                  <DEFINITION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvMemLayoutHwRegion</DEFINITION-REF>
+                </ECUC-CONTAINER-VALUE>
+                <ECUC-CONTAINER-VALUE UUID="e09ffbef-5e9e-4bdc-9e8e-4cb9fa3afb03">
+                  <SHORT-NAME>PFlash1_Cached</SHORT-NAME>
+                  <DEFINITION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvMemLayoutHwRegion</DEFINITION-REF>
+                </ECUC-CONTAINER-VALUE>
+                <ECUC-CONTAINER-VALUE UUID="4fa9acae-7c70-41e5-9703-5257b61003d9">
+                  <SHORT-NAME>PFlash1_NonCached</SHORT-NAME>
+                  <DEFINITION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvMemLayoutHwRegion</DEFINITION-REF>
+                </ECUC-CONTAINER-VALUE>
+                <ECUC-CONTAINER-VALUE UUID="4b2c152b-48d9-4003-ad80-be64c0c108fc">
+                  <SHORT-NAME>lmuram_Cahed</SHORT-NAME>
+                  <DEFINITION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvMemLayoutHwRegion</DEFINITION-REF>
+                </ECUC-CONTAINER-VALUE>
+                <ECUC-CONTAINER-VALUE UUID="9668fb1b-e2b4-4c74-89cc-cd095d0756be">
+                  <SHORT-NAME>lmuram_NonCahed</SHORT-NAME>
+                  <DEFINITION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/MICROSAR/vBaseEnv/vBaseEnvGeneral/vBaseEnvMemLayoutHwRegion</DEFINITION-REF>
+                </ECUC-CONTAINER-VALUE>
+              </SUB-CONTAINERS>
+            </ECUC-CONTAINER-VALUE>
+          </CONTAINERS>
+        </ECUC-MODULE-CONFIGURATION-VALUES>
+      </ELEMENTS>
+    </AR-PACKAGE>
+  </AR-PACKAGES>
+</AUTOSAR>

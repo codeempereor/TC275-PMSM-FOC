@@ -1,0 +1,1088 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<AUTOSAR xmlns="http://autosar.org/schema/r4.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://autosar.org/schema/r4.0 AUTOSAR_00046.xsd">
+  <AR-PACKAGES>
+    <AR-PACKAGE>
+      <SHORT-NAME>ActiveEcuC</SHORT-NAME>
+      <ELEMENTS>
+        <ECUC-MODULE-CONFIGURATION-VALUES UUID="67cf779d-28f0-4821-acb4-8e8adda9c9ba">
+          <SHORT-NAME>BswM</SHORT-NAME>
+          <DEFINITION-REF DEST="ECUC-MODULE-DEF">/MICROSAR/BswM</DEFINITION-REF>
+          <IMPLEMENTATION-CONFIG-VARIANT>VARIANT-PRE-COMPILE</IMPLEMENTATION-CONFIG-VARIANT>
+          <MODULE-DESCRIPTION-REF DEST="BSW-IMPLEMENTATION">/MICROSAR/BswM_Impl</MODULE-DESCRIPTION-REF>
+          <CONTAINERS>
+            <ECUC-CONTAINER-VALUE UUID="45b63ab7-7941-46ef-bb57-21fede2a6838">
+              <SHORT-NAME>BswMConfig</SHORT-NAME>
+              <DEFINITION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/MICROSAR/BswM/BswMConfig</DEFINITION-REF>
+              <SUB-CONTAINERS>
+                <ECUC-CONTAINER-VALUE UUID="15e74f72-0c85-4e82-9be3-f93f794859f5">
+                  <SHORT-NAME>BswMArbitration</SHORT-NAME>
+                  <DEFINITION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/MICROSAR/BswM/BswMConfig/BswMArbitration</DEFINITION-REF>
+                </ECUC-CONTAINER-VALUE>
+                <ECUC-CONTAINER-VALUE UUID="c5a53c27-7414-487b-9786-be53bea4e7ba">
+                  <SHORT-NAME>BswMModeControl</SHORT-NAME>
+                  <DEFINITION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/MICROSAR/BswM/BswMConfig/BswMModeControl</DEFINITION-REF>
+                </ECUC-CONTAINER-VALUE>
+                <ECUC-CONTAINER-VALUE UUID="be9ff69e-44a4-4084-97f8-f25cc6641dae">
+                  <SHORT-NAME>BswMDataTypeMappingSets</SHORT-NAME>
+                  <DEFINITION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/MICROSAR/BswM/BswMConfig/BswMDataTypeMappingSets</DEFINITION-REF>
+                  <REFERENCE-VALUES>
+                    <ECUC-REFERENCE-VALUE>
+                      <DEFINITION-REF DEST="ECUC-FOREIGN-REFERENCE-DEF">/MICROSAR/BswM/BswMConfig/BswMDataTypeMappingSets/BswMDataTypeMappingSetRef</DEFINITION-REF>
+                      <VALUE-REF DEST="DATA-TYPE-MAPPING-SET">/MICROSAR/BswM_swc/BswMMappingSet</VALUE-REF>
+                    </ECUC-REFERENCE-VALUE>
+                  </REFERENCE-VALUES>
+                </ECUC-CONTAINER-VALUE>
+                <ECUC-CONTAINER-VALUE UUID="f89a9aed-eadc-45fd-b2c4-ab36c21415ff">
+                  <SHORT-NAME>ESH_Mode</SHORT-NAME>
+                  <DEFINITION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/MICROSAR/BswM/BswMConfig/BswMRteModeDclGroup</DEFINITION-REF>
+                  <REFERENCE-VALUES>
+                    <ECUC-REFERENCE-VALUE>
+                      <DEFINITION-REF DEST="ECUC-REFERENCE-DEF">/MICROSAR/BswM/BswMConfig/BswMRteModeDclGroup/BswMInitMode</DEFINITION-REF>
+                      <VALUE-REF DEST="ECUC-CONTAINER-VALUE">/ActiveEcuC/BswM/BswMConfig/ESH_Mode/STARTUP</VALUE-REF>
+                    </ECUC-REFERENCE-VALUE>
+                  </REFERENCE-VALUES>
+                  <SUB-CONTAINERS>
+                    <ECUC-CONTAINER-VALUE UUID="a026e386-33ff-4940-918e-7c8965928a95">
+                      <SHORT-NAME>STARTUP</SHORT-NAME>
+                      <DEFINITION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/MICROSAR/BswM/BswMConfig/BswMRteModeDclGroup/BswMRteMode</DEFINITION-REF>
+                      <PARAMETER-VALUES>
+                        <ECUC-NUMERICAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/BswM/BswMConfig/BswMRteModeDclGroup/BswMRteMode/BswMModePhysicalValue</DEFINITION-REF>
+                          <VALUE>0</VALUE>
+                        </ECUC-NUMERICAL-PARAM-VALUE>
+                      </PARAMETER-VALUES>
+                    </ECUC-CONTAINER-VALUE>
+                    <ECUC-CONTAINER-VALUE UUID="74050e6a-7fed-4823-a63d-e86a0b727ba7">
+                      <SHORT-NAME>RUN</SHORT-NAME>
+                      <DEFINITION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/MICROSAR/BswM/BswMConfig/BswMRteModeDclGroup/BswMRteMode</DEFINITION-REF>
+                      <PARAMETER-VALUES>
+                        <ECUC-NUMERICAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/BswM/BswMConfig/BswMRteModeDclGroup/BswMRteMode/BswMModePhysicalValue</DEFINITION-REF>
+                          <VALUE>1</VALUE>
+                        </ECUC-NUMERICAL-PARAM-VALUE>
+                      </PARAMETER-VALUES>
+                    </ECUC-CONTAINER-VALUE>
+                    <ECUC-CONTAINER-VALUE UUID="d400adb6-e61e-42b3-8026-0a1214d80869">
+                      <SHORT-NAME>POSTRUN</SHORT-NAME>
+                      <DEFINITION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/MICROSAR/BswM/BswMConfig/BswMRteModeDclGroup/BswMRteMode</DEFINITION-REF>
+                      <PARAMETER-VALUES>
+                        <ECUC-NUMERICAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/BswM/BswMConfig/BswMRteModeDclGroup/BswMRteMode/BswMModePhysicalValue</DEFINITION-REF>
+                          <VALUE>2</VALUE>
+                        </ECUC-NUMERICAL-PARAM-VALUE>
+                      </PARAMETER-VALUES>
+                    </ECUC-CONTAINER-VALUE>
+                    <ECUC-CONTAINER-VALUE UUID="6f2afca1-b6e3-44cd-84c3-08c06f0f18f9">
+                      <SHORT-NAME>WAKEUP</SHORT-NAME>
+                      <DEFINITION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/MICROSAR/BswM/BswMConfig/BswMRteModeDclGroup/BswMRteMode</DEFINITION-REF>
+                      <PARAMETER-VALUES>
+                        <ECUC-NUMERICAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/BswM/BswMConfig/BswMRteModeDclGroup/BswMRteMode/BswMModePhysicalValue</DEFINITION-REF>
+                          <VALUE>3</VALUE>
+                        </ECUC-NUMERICAL-PARAM-VALUE>
+                      </PARAMETER-VALUES>
+                    </ECUC-CONTAINER-VALUE>
+                    <ECUC-CONTAINER-VALUE UUID="bd916d7b-4a16-4054-b816-31e150b338f8">
+                      <SHORT-NAME>SHUTDOWN</SHORT-NAME>
+                      <DEFINITION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/MICROSAR/BswM/BswMConfig/BswMRteModeDclGroup/BswMRteMode</DEFINITION-REF>
+                      <PARAMETER-VALUES>
+                        <ECUC-NUMERICAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/BswM/BswMConfig/BswMRteModeDclGroup/BswMRteMode/BswMModePhysicalValue</DEFINITION-REF>
+                          <VALUE>4</VALUE>
+                        </ECUC-NUMERICAL-PARAM-VALUE>
+                      </PARAMETER-VALUES>
+                    </ECUC-CONTAINER-VALUE>
+                  </SUB-CONTAINERS>
+                </ECUC-CONTAINER-VALUE>
+                <ECUC-CONTAINER-VALUE UUID="35aebb16-f611-4477-a954-e0b8484def51">
+                  <SHORT-NAME>ESH_RunRequest</SHORT-NAME>
+                  <DEFINITION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/MICROSAR/BswM/BswMConfig/BswMRteModeDclGroup</DEFINITION-REF>
+                  <REFERENCE-VALUES>
+                    <ECUC-REFERENCE-VALUE>
+                      <DEFINITION-REF DEST="ECUC-REFERENCE-DEF">/MICROSAR/BswM/BswMConfig/BswMRteModeDclGroup/BswMInitMode</DEFINITION-REF>
+                      <VALUE-REF DEST="ECUC-CONTAINER-VALUE">/ActiveEcuC/BswM/BswMConfig/ESH_RunRequest/RELEASED</VALUE-REF>
+                    </ECUC-REFERENCE-VALUE>
+                  </REFERENCE-VALUES>
+                  <SUB-CONTAINERS>
+                    <ECUC-CONTAINER-VALUE UUID="33687cb2-9c84-4f2a-8d53-8c8afd04fa55">
+                      <SHORT-NAME>RELEASED</SHORT-NAME>
+                      <DEFINITION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/MICROSAR/BswM/BswMConfig/BswMRteModeDclGroup/BswMRteMode</DEFINITION-REF>
+                      <PARAMETER-VALUES>
+                        <ECUC-NUMERICAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/BswM/BswMConfig/BswMRteModeDclGroup/BswMRteMode/BswMModePhysicalValue</DEFINITION-REF>
+                          <VALUE>0</VALUE>
+                        </ECUC-NUMERICAL-PARAM-VALUE>
+                      </PARAMETER-VALUES>
+                    </ECUC-CONTAINER-VALUE>
+                    <ECUC-CONTAINER-VALUE UUID="02256c4f-dcab-4df9-8fdc-3d579b75ae5e">
+                      <SHORT-NAME>REQUESTED</SHORT-NAME>
+                      <DEFINITION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/MICROSAR/BswM/BswMConfig/BswMRteModeDclGroup/BswMRteMode</DEFINITION-REF>
+                      <PARAMETER-VALUES>
+                        <ECUC-NUMERICAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/BswM/BswMConfig/BswMRteModeDclGroup/BswMRteMode/BswMModePhysicalValue</DEFINITION-REF>
+                          <VALUE>1</VALUE>
+                        </ECUC-NUMERICAL-PARAM-VALUE>
+                      </PARAMETER-VALUES>
+                    </ECUC-CONTAINER-VALUE>
+                  </SUB-CONTAINERS>
+                </ECUC-CONTAINER-VALUE>
+                <ECUC-CONTAINER-VALUE UUID="2a024e64-c0a8-48b4-b75b-0bacee04e817">
+                  <SHORT-NAME>ModeDecl_ComFault_State</SHORT-NAME>
+                  <DEFINITION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/MICROSAR/BswM/BswMConfig/BswMRteModeDclGroup</DEFINITION-REF>
+                  <REFERENCE-VALUES>
+                    <ECUC-REFERENCE-VALUE>
+                      <DEFINITION-REF DEST="ECUC-REFERENCE-DEF">/MICROSAR/BswM/BswMConfig/BswMRteModeDclGroup/BswMInitMode</DEFINITION-REF>
+                      <VALUE-REF DEST="ECUC-CONTAINER-VALUE">/ActiveEcuC/BswM/BswMConfig/ModeDecl_ComFault_State/ComFaultPreCond_FAIL</VALUE-REF>
+                    </ECUC-REFERENCE-VALUE>
+                  </REFERENCE-VALUES>
+                  <SUB-CONTAINERS>
+                    <ECUC-CONTAINER-VALUE UUID="3b03bb68-1e76-4ccb-acfd-ebcede2ff271">
+                      <SHORT-NAME>ComFaultPreCond_PASS</SHORT-NAME>
+                      <DEFINITION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/MICROSAR/BswM/BswMConfig/BswMRteModeDclGroup/BswMRteMode</DEFINITION-REF>
+                      <PARAMETER-VALUES>
+                        <ECUC-NUMERICAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/BswM/BswMConfig/BswMRteModeDclGroup/BswMRteMode/BswMModePhysicalValue</DEFINITION-REF>
+                          <VALUE>1</VALUE>
+                        </ECUC-NUMERICAL-PARAM-VALUE>
+                      </PARAMETER-VALUES>
+                    </ECUC-CONTAINER-VALUE>
+                    <ECUC-CONTAINER-VALUE UUID="50788a1a-fb26-403d-98d7-59a0f66c947d">
+                      <SHORT-NAME>ComFaultPreCond_FAIL</SHORT-NAME>
+                      <DEFINITION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/MICROSAR/BswM/BswMConfig/BswMRteModeDclGroup/BswMRteMode</DEFINITION-REF>
+                      <PARAMETER-VALUES>
+                        <ECUC-NUMERICAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/BswM/BswMConfig/BswMRteModeDclGroup/BswMRteMode/BswMModePhysicalValue</DEFINITION-REF>
+                          <VALUE>0</VALUE>
+                        </ECUC-NUMERICAL-PARAM-VALUE>
+                      </PARAMETER-VALUES>
+                    </ECUC-CONTAINER-VALUE>
+                  </SUB-CONTAINERS>
+                </ECUC-CONTAINER-VALUE>
+                <ECUC-CONTAINER-VALUE UUID="b6331bd0-ef7c-4ab4-bacf-43ff18b656d4">
+                  <SHORT-NAME>ModeDecl_ComFault_State_WithKL15</SHORT-NAME>
+                  <DEFINITION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/MICROSAR/BswM/BswMConfig/BswMRteModeDclGroup</DEFINITION-REF>
+                  <REFERENCE-VALUES>
+                    <ECUC-REFERENCE-VALUE>
+                      <DEFINITION-REF DEST="ECUC-REFERENCE-DEF">/MICROSAR/BswM/BswMConfig/BswMRteModeDclGroup/BswMInitMode</DEFINITION-REF>
+                      <VALUE-REF DEST="ECUC-CONTAINER-VALUE">/ActiveEcuC/BswM/BswMConfig/ModeDecl_ComFault_State_WithKL15/ComFaultPreCondWithKL15_FAIL</VALUE-REF>
+                    </ECUC-REFERENCE-VALUE>
+                  </REFERENCE-VALUES>
+                  <SUB-CONTAINERS>
+                    <ECUC-CONTAINER-VALUE UUID="853548af-5845-4a43-b84e-c46055e48913">
+                      <SHORT-NAME>ComFaultPreCondWithKL15_FAIL</SHORT-NAME>
+                      <DEFINITION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/MICROSAR/BswM/BswMConfig/BswMRteModeDclGroup/BswMRteMode</DEFINITION-REF>
+                      <PARAMETER-VALUES>
+                        <ECUC-NUMERICAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/BswM/BswMConfig/BswMRteModeDclGroup/BswMRteMode/BswMModePhysicalValue</DEFINITION-REF>
+                          <VALUE>0</VALUE>
+                        </ECUC-NUMERICAL-PARAM-VALUE>
+                      </PARAMETER-VALUES>
+                    </ECUC-CONTAINER-VALUE>
+                    <ECUC-CONTAINER-VALUE UUID="3dd6524e-783d-400f-9366-0134a165b25c">
+                      <SHORT-NAME>ComFaultPreCondWithKL15_PASS</SHORT-NAME>
+                      <DEFINITION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/MICROSAR/BswM/BswMConfig/BswMRteModeDclGroup/BswMRteMode</DEFINITION-REF>
+                      <PARAMETER-VALUES>
+                        <ECUC-NUMERICAL-PARAM-VALUE>
+                          <DEFINITION-REF DEST="ECUC-INTEGER-PARAM-DEF">/MICROSAR/BswM/BswMConfig/BswMRteModeDclGroup/BswMRteMode/BswMModePhysicalValue</DEFINITION-REF>
+                          <VALUE>1</VALUE>
+                        </ECUC-NUMERICAL-PARAM-VALUE>
+                      </PARAMETER-VALUES>
+                    </ECUC-CONTAINER-VALUE>
+                  </SUB-CONTAINERS>
+                </ECUC-CONTAINER-VALUE>
+              </SUB-CONTAINERS>
+            </ECUC-CONTAINER-VALUE>
+            <ECUC-CONTAINER-VALUE UUID="4c9d54b8-6322-4282-b70e-fd219a394624">
+              <SHORT-NAME>BswMGeneral</SHORT-NAME>
+              <DEFINITION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/MICROSAR/BswM/BswMGeneral</DEFINITION-REF>
+              <PARAMETER-VALUES>
+                <ECUC-NUMERICAL-PARAM-VALUE>
+                  <DEFINITION-REF DEST="ECUC-BOOLEAN-PARAM-DEF">/MICROSAR/BswM/BswMGeneral/BswMCanSMEnabled</DEFINITION-REF>
+                  <VALUE>false</VALUE>
+                </ECUC-NUMERICAL-PARAM-VALUE>
+                <ECUC-NUMERICAL-PARAM-VALUE>
+                  <DEFINITION-REF DEST="ECUC-BOOLEAN-PARAM-DEF">/MICROSAR/BswM/BswMGeneral/BswMComMEnabled</DEFINITION-REF>
+                  <VALUE>false</VALUE>
+                </ECUC-NUMERICAL-PARAM-VALUE>
+                <ECUC-NUMERICAL-PARAM-VALUE>
+                  <DEFINITION-REF DEST="ECUC-BOOLEAN-PARAM-DEF">/MICROSAR/BswM/BswMGeneral/BswMDcmEnabled</DEFINITION-REF>
+                  <VALUE>false</VALUE>
+                </ECUC-NUMERICAL-PARAM-VALUE>
+                <ECUC-NUMERICAL-PARAM-VALUE>
+                  <DEFINITION-REF DEST="ECUC-BOOLEAN-PARAM-DEF">/MICROSAR/BswM/BswMGeneral/BswMDevErrorDetect</DEFINITION-REF>
+                  <VALUE>true</VALUE>
+                </ECUC-NUMERICAL-PARAM-VALUE>
+                <ECUC-NUMERICAL-PARAM-VALUE>
+                  <DEFINITION-REF DEST="ECUC-BOOLEAN-PARAM-DEF">/MICROSAR/BswM/BswMGeneral/BswMEcuMEnabled</DEFINITION-REF>
+                  <VALUE>true</VALUE>
+                </ECUC-NUMERICAL-PARAM-VALUE>
+                <ECUC-NUMERICAL-PARAM-VALUE>
+                  <DEFINITION-REF DEST="ECUC-BOOLEAN-PARAM-DEF">/MICROSAR/BswM/BswMGeneral/BswMEthIfEnabled</DEFINITION-REF>
+                  <VALUE>false</VALUE>
+                </ECUC-NUMERICAL-PARAM-VALUE>
+                <ECUC-NUMERICAL-PARAM-VALUE>
+                  <DEFINITION-REF DEST="ECUC-BOOLEAN-PARAM-DEF">/MICROSAR/BswM/BswMGeneral/BswMEthSMEnabled</DEFINITION-REF>
+                  <VALUE>false</VALUE>
+                </ECUC-NUMERICAL-PARAM-VALUE>
+                <ECUC-NUMERICAL-PARAM-VALUE>
+                  <DEFINITION-REF DEST="ECUC-BOOLEAN-PARAM-DEF">/MICROSAR/BswM/BswMGeneral/BswMFrSMEnabled</DEFINITION-REF>
+                  <VALUE>false</VALUE>
+                </ECUC-NUMERICAL-PARAM-VALUE>
+                <ECUC-NUMERICAL-PARAM-VALUE>
+                  <DEFINITION-REF DEST="ECUC-BOOLEAN-PARAM-DEF">/MICROSAR/BswM/BswMGeneral/BswMGenericRequestEnabled</DEFINITION-REF>
+                  <VALUE>true</VALUE>
+                </ECUC-NUMERICAL-PARAM-VALUE>
+                <ECUC-NUMERICAL-PARAM-VALUE>
+                  <DEFINITION-REF DEST="ECUC-BOOLEAN-PARAM-DEF">/MICROSAR/BswM/BswMGeneral/BswMJ1939DcmEnabled</DEFINITION-REF>
+                  <VALUE>false</VALUE>
+                </ECUC-NUMERICAL-PARAM-VALUE>
+                <ECUC-NUMERICAL-PARAM-VALUE>
+                  <DEFINITION-REF DEST="ECUC-BOOLEAN-PARAM-DEF">/MICROSAR/BswM/BswMGeneral/BswMJ1939NmEnabled</DEFINITION-REF>
+                  <VALUE>false</VALUE>
+                </ECUC-NUMERICAL-PARAM-VALUE>
+                <ECUC-NUMERICAL-PARAM-VALUE>
+                  <DEFINITION-REF DEST="ECUC-BOOLEAN-PARAM-DEF">/MICROSAR/BswM/BswMGeneral/BswMLinSMEnabled</DEFINITION-REF>
+                  <VALUE>false</VALUE>
+                </ECUC-NUMERICAL-PARAM-VALUE>
+                <ECUC-NUMERICAL-PARAM-VALUE>
+                  <DEFINITION-REF DEST="ECUC-BOOLEAN-PARAM-DEF">/MICROSAR/BswM/BswMGeneral/BswMLinTPEnabled</DEFINITION-REF>
+                  <VALUE>false</VALUE>
+                </ECUC-NUMERICAL-PARAM-VALUE>
+                <ECUC-NUMERICAL-PARAM-VALUE>
+                  <DEFINITION-REF DEST="ECUC-BOOLEAN-PARAM-DEF">/MICROSAR/BswM/BswMGeneral/BswMNmEnabled</DEFINITION-REF>
+                  <VALUE>false</VALUE>
+                </ECUC-NUMERICAL-PARAM-VALUE>
+                <ECUC-NUMERICAL-PARAM-VALUE>
+                  <DEFINITION-REF DEST="ECUC-BOOLEAN-PARAM-DEF">/MICROSAR/BswM/BswMGeneral/BswMNvMEnabled</DEFINITION-REF>
+                  <VALUE>false</VALUE>
+                </ECUC-NUMERICAL-PARAM-VALUE>
+                <ECUC-NUMERICAL-PARAM-VALUE>
+                  <DEFINITION-REF DEST="ECUC-BOOLEAN-PARAM-DEF">/MICROSAR/BswM/BswMGeneral/BswMPduREnabled</DEFINITION-REF>
+                  <VALUE>false</VALUE>
+                </ECUC-NUMERICAL-PARAM-VALUE>
+                <ECUC-NUMERICAL-PARAM-VALUE>
+                  <DEFINITION-REF DEST="ECUC-BOOLEAN-PARAM-DEF">/MICROSAR/BswM/BswMGeneral/BswMRuleControlEnabled</DEFINITION-REF>
+                  <VALUE>false</VALUE>
+                </ECUC-NUMERICAL-PARAM-VALUE>
+                <ECUC-NUMERICAL-PARAM-VALUE>
+                  <DEFINITION-REF DEST="ECUC-BOOLEAN-PARAM-DEF">/MICROSAR/BswM/BswMGeneral/BswMSdEnabled</DEFINITION-REF>
+                  <VALUE>false</VALUE>
+                </ECUC-NUMERICAL-PARAM-VALUE>
+                <ECUC-NUMERICAL-PARAM-VALUE>
+                  <DEFINITION-REF DEST="ECUC-BOOLEAN-PARAM-DEF">/MICROSAR/BswM/BswMGeneral/BswMVersionInfoApi</DEFINITION-REF>
+                  <VALUE>false</VALUE>
+                </ECUC-NUMERICAL-PARAM-VALUE>
+                <ECUC-NUMERICAL-PARAM-VALUE>
+                  <DEFINITION-REF DEST="ECUC-BOOLEAN-PARAM-DEF">/MICROSAR/BswM/BswMGeneral/BswMWdgMEnabled</DEFINITION-REF>
+                  <VALUE>false</VALUE>
+                </ECUC-NUMERICAL-PARAM-VALUE>
+                <ECUC-NUMERICAL-PARAM-VALUE>
+                  <DEFINITION-REF DEST="ECUC-BOOLEAN-PARAM-DEF">/MICROSAR/BswM/BswMGeneral/BswMModeCheck</DEFINITION-REF>
+                  <VALUE>true</VALUE>
+                </ECUC-NUMERICAL-PARAM-VALUE>
+                <ECUC-TEXTUAL-PARAM-VALUE>
+                  <DEFINITION-REF DEST="ECUC-ENUMERATION-PARAM-DEF">/MICROSAR/BswM/BswMGeneral/BswMActionListQueueSearchAlgorithm</DEFINITION-REF>
+                  <VALUE>LINEAR_SEARCH</VALUE>
+                </ECUC-TEXTUAL-PARAM-VALUE>
+                <ECUC-NUMERICAL-PARAM-VALUE>
+                  <DEFINITION-REF DEST="ECUC-BOOLEAN-PARAM-DEF">/MICROSAR/BswM/BswMGeneral/BswMSafeBswChecks</DEFINITION-REF>
+                  <VALUE>false</VALUE>
+                </ECUC-NUMERICAL-PARAM-VALUE>
+                <ECUC-NUMERICAL-PARAM-VALUE>
+                  <DEFINITION-REF DEST="ECUC-FLOAT-PARAM-DEF">/MICROSAR/BswM/BswMGeneral/BswMMainFunctionPeriod</DEFINITION-REF>
+                  <VALUE>0.005</VALUE>
+                </ECUC-NUMERICAL-PARAM-VALUE>
+              </PARAMETER-VALUES>
+              <SUB-CONTAINERS>
+                <ECUC-CONTAINER-VALUE UUID="636d9ec1-cc95-4cff-961d-eef5bb112c0c">
+                  <SHORT-NAME>BswMCommonData</SHORT-NAME>
+                  <ADMIN-DATA>
+                    <SDGS>
+                      <SDG GID="DV:BswM">
+                        <SDG GID="DV:Statemachines">
+                          <SDG GID="DV:Communication">
+                            <SD GID="DV:Version">16.00.00.2</SD>
+                            <SDG GID="DV:Feature:CN_DBCNetWork_05d62413">
+                              <SD GID="DV:Name">CN_DBCNetWork_05d62413</SD>
+                              <SD GID="DV:Value">TRUE</SD>
+                              <SDG GID="DV:Param:ReInitialize_TX">
+                                <SD GID="DV:Name">ReInitialize TX</SD>
+                                <SD GID="DV:Default">false</SD>
+                                <SD GID="DV:Value">false</SD>
+                              </SDG>
+                              <SDG GID="DV:Param:ReInitialize_RX">
+                                <SD GID="DV:Name">ReInitialize RX</SD>
+                                <SD GID="DV:Default">false</SD>
+                                <SD GID="DV:Value">false</SD>
+                              </SDG>
+                              <SDG GID="DV:Param:DCM_ENABLE_RX_DISABLE_TX_NORM">
+                                <SD GID="DV:Default">false</SD>
+                                <SD GID="DV:Value">false</SD>
+                              </SDG>
+                              <SDG GID="DV:Param:DCM_DISABLE_RX_ENABLE_TX_NORM">
+                                <SD GID="DV:Default">false</SD>
+                                <SD GID="DV:Value">false</SD>
+                              </SDG>
+                              <SDG GID="DV:Param:DCM_DISABLE_RX_TX_NORMAL">
+                                <SD GID="DV:Default">false</SD>
+                                <SD GID="DV:Value">false</SD>
+                              </SDG>
+                              <SDG GID="DV:Param:DCM_ENABLE_RX_DISABLE_TX_NM">
+                                <SD GID="DV:Default">false</SD>
+                                <SD GID="DV:Value">false</SD>
+                              </SDG>
+                              <SDG GID="DV:Param:DCM_DISABLE_RX_ENABLE_TX_NM">
+                                <SD GID="DV:Default">false</SD>
+                                <SD GID="DV:Value">false</SD>
+                              </SDG>
+                              <SDG GID="DV:Param:DCM_DISABLE_RX_TX_NM">
+                                <SD GID="DV:Default">false</SD>
+                                <SD GID="DV:Value">false</SD>
+                              </SDG>
+                              <SDG GID="DV:Param:DCM_ENABLE_RX_DISABLE_TX_NORM_NM">
+                                <SD GID="DV:Default">false</SD>
+                                <SD GID="DV:Value">false</SD>
+                              </SDG>
+                              <SDG GID="DV:Param:DCM_DISABLE_RX_ENABLE_TX_NORM_NM">
+                                <SD GID="DV:Default">false</SD>
+                                <SD GID="DV:Value">false</SD>
+                              </SDG>
+                              <SDG GID="DV:Param:DCM_DISABLE_RX_TX_NORM_NM">
+                                <SD GID="DV:Default">false</SD>
+                                <SD GID="DV:Value">false</SD>
+                              </SDG>
+                              <SDG GID="DV:Param:NM_STATE_BUS_OFF">
+                                <SD GID="DV:Default">false</SD>
+                                <SD GID="DV:Value">false</SD>
+                              </SDG>
+                              <SDG GID="DV:Param:NM_STATE_CHECK_WAKEUP">
+                                <SD GID="DV:Default">false</SD>
+                                <SD GID="DV:Value">false</SD>
+                              </SDG>
+                              <SDG GID="DV:Param:NM_STATE_WAIT_STARTUP">
+                                <SD GID="DV:Default">false</SD>
+                                <SD GID="DV:Value">false</SD>
+                              </SDG>
+                              <SDG GID="DV:Param:NM_STATE_BUS_SLEEP">
+                                <SD GID="DV:Default">false</SD>
+                                <SD GID="DV:Value">false</SD>
+                              </SDG>
+                              <SDG GID="DV:Param:NM_STATE_PREPARE_BUS_SLEEP">
+                                <SD GID="DV:Default">false</SD>
+                                <SD GID="DV:Value">false</SD>
+                              </SDG>
+                              <SDG GID="DV:Feature:CC_CN_DBCNetWork_05d62413_NM">
+                                <SD GID="DV:Name">Nm Communication</SD>
+                                <SD GID="DV:Value">FALSE</SD>
+                              </SDG>
+                              <SDG GID="DV:Feature:CC_XB_SUP_F_oDBCNetWork_Tx_78634bbc_XB_SUP_F_oDBCNetWork_Tx_78634bbc">
+                                <SD GID="DV:Name">Group: XB_SUP_F_oDBCNetWork_Tx_78634bbc</SD>
+                                <SD GID="DV:Value">TRUE</SD>
+                              </SDG>
+                              <SDG GID="DV:Feature:CC_XB_SUP_F_oDBCNetWork_Rx_2e39ec3a_XB_SUP_F_oDBCNetWork_Rx_2e39ec3a">
+                                <SD GID="DV:Name">Group: XB_SUP_F_oDBCNetWork_Rx_2e39ec3a</SD>
+                                <SD GID="DV:Value">TRUE</SD>
+                              </SDG>
+                            </SDG>
+                            <SDG GID="DV:Feature:CN_DBCNetWork_INTER1_9768a826">
+                              <SD GID="DV:Name">CN_DBCNetWork_INTER1_9768a826</SD>
+                              <SD GID="DV:Value">FALSE</SD>
+                              <SDG GID="DV:Param:ReInitialize_TX">
+                                <SD GID="DV:Name">ReInitialize TX</SD>
+                                <SD GID="DV:Default">false</SD>
+                                <SD GID="DV:Value">false</SD>
+                              </SDG>
+                              <SDG GID="DV:Param:ReInitialize_RX">
+                                <SD GID="DV:Name">ReInitialize RX</SD>
+                                <SD GID="DV:Default">false</SD>
+                                <SD GID="DV:Value">false</SD>
+                              </SDG>
+                              <SDG GID="DV:Param:DCM_ENABLE_RX_DISABLE_TX_NORM">
+                                <SD GID="DV:Default">false</SD>
+                                <SD GID="DV:Value">false</SD>
+                              </SDG>
+                              <SDG GID="DV:Param:DCM_DISABLE_RX_ENABLE_TX_NORM">
+                                <SD GID="DV:Default">false</SD>
+                                <SD GID="DV:Value">false</SD>
+                              </SDG>
+                              <SDG GID="DV:Param:DCM_DISABLE_RX_TX_NORMAL">
+                                <SD GID="DV:Default">false</SD>
+                                <SD GID="DV:Value">false</SD>
+                              </SDG>
+                              <SDG GID="DV:Param:DCM_ENABLE_RX_DISABLE_TX_NM">
+                                <SD GID="DV:Default">false</SD>
+                                <SD GID="DV:Value">false</SD>
+                              </SDG>
+                              <SDG GID="DV:Param:DCM_DISABLE_RX_ENABLE_TX_NM">
+                                <SD GID="DV:Default">false</SD>
+                                <SD GID="DV:Value">false</SD>
+                              </SDG>
+                              <SDG GID="DV:Param:DCM_DISABLE_RX_TX_NM">
+                                <SD GID="DV:Default">false</SD>
+                                <SD GID="DV:Value">false</SD>
+                              </SDG>
+                              <SDG GID="DV:Param:DCM_ENABLE_RX_DISABLE_TX_NORM_NM">
+                                <SD GID="DV:Default">false</SD>
+                                <SD GID="DV:Value">false</SD>
+                              </SDG>
+                              <SDG GID="DV:Param:DCM_DISABLE_RX_ENABLE_TX_NORM_NM">
+                                <SD GID="DV:Default">false</SD>
+                                <SD GID="DV:Value">false</SD>
+                              </SDG>
+                              <SDG GID="DV:Param:DCM_DISABLE_RX_TX_NORM_NM">
+                                <SD GID="DV:Default">false</SD>
+                                <SD GID="DV:Value">false</SD>
+                              </SDG>
+                              <SDG GID="DV:Param:NM_STATE_BUS_OFF">
+                                <SD GID="DV:Default">false</SD>
+                                <SD GID="DV:Value">false</SD>
+                              </SDG>
+                              <SDG GID="DV:Param:NM_STATE_CHECK_WAKEUP">
+                                <SD GID="DV:Default">false</SD>
+                                <SD GID="DV:Value">false</SD>
+                              </SDG>
+                              <SDG GID="DV:Param:NM_STATE_WAIT_STARTUP">
+                                <SD GID="DV:Default">false</SD>
+                                <SD GID="DV:Value">false</SD>
+                              </SDG>
+                              <SDG GID="DV:Param:NM_STATE_BUS_SLEEP">
+                                <SD GID="DV:Default">false</SD>
+                                <SD GID="DV:Value">false</SD>
+                              </SDG>
+                              <SDG GID="DV:Param:NM_STATE_PREPARE_BUS_SLEEP">
+                                <SD GID="DV:Default">false</SD>
+                                <SD GID="DV:Value">false</SD>
+                              </SDG>
+                              <SDG GID="DV:Feature:CC_CN_DBCNetWork_INTER1_9768a826_NM">
+                                <SD GID="DV:Name">Nm Communication</SD>
+                                <SD GID="DV:Value">FALSE</SD>
+                              </SDG>
+                            </SDG>
+                          </SDG>
+                          <SDG GID="DV:INIT">
+                            <SD GID="DV:Version">16.00.00.2</SD>
+                            <SDG GID="DV:Feature:NvMReadAll">
+                              <SD GID="DV:Name">Execute NvM ReadAll</SD>
+                              <SD GID="DV:Value">TRUE</SD>
+                            </SDG>
+                            <SDG GID="DV:Feature:EnableInterrupts">
+                              <SD GID="DV:Name">Enable Interrupts</SD>
+                              <SD GID="DV:Value">TRUE</SD>
+                            </SDG>
+                            <SDG GID="DV:Feature:InitKnownModules">
+                              <SD GID="DV:Name">Initialize known modules</SD>
+                              <SD GID="DV:Value">TRUE</SD>
+                              <SDG GID="DV:Param:PARAMETER:Restore_Default_Sequence">
+                                <SD GID="DV:Name">Restore Default Sequence</SD>
+                                <SD GID="DV:Default">false</SD>
+                                <SD GID="DV:Value">true</SD>
+                              </SDG>
+                              <SDG GID="DV:Feature:INIT_ZERO">
+                                <SD GID="DV:Name">InitPhase: INIT_ZERO</SD>
+                                <SD GID="DV:Value">TRUE</SD>
+                                <SDG GID="DV:Feature:Dem_PreInit">
+                                  <SD GID="DV:Name">Dem_PreInit</SD>
+                                  <SD GID="DV:Value">TRUE</SD>
+                                  <SDG GID="DV:Param:Dem_PreInit_Function">
+                                    <SD GID="DV:Name">Dem_PreInit Function</SD>
+                                    <SD GID="DV:Default">Dem_PreInit(Dem_Config_Ptr)</SD>
+                                    <SD GID="DV:Value">Dem_PreInit(Dem_Config_Ptr)</SD>
+                                  </SDG>
+                                  <SDG GID="DV:Param:Dem_PreInit_Header">
+                                    <SD GID="DV:Name">Dem_PreInit Header</SD>
+                                    <SD GID="DV:Default">Dem.h</SD>
+                                    <SD GID="DV:Value">Dem.h</SD>
+                                  </SDG>
+                                </SDG>
+                                <SDG GID="DV:Feature:Det_Init">
+                                  <SD GID="DV:Name">Det_Init</SD>
+                                  <SD GID="DV:Value">TRUE</SD>
+                                  <SDG GID="DV:Param:Det_Init_Function">
+                                    <SD GID="DV:Name">Det_Init Function</SD>
+                                    <SD GID="DV:Default">Det_Init(Det_Config_Ptr)</SD>
+                                    <SD GID="DV:Value">Det_Init(Det_Config_Ptr)</SD>
+                                  </SDG>
+                                  <SDG GID="DV:Param:Det_Init_Header">
+                                    <SD GID="DV:Name">Det_Init Header</SD>
+                                    <SD GID="DV:Default">Det.h</SD>
+                                    <SD GID="DV:Value">Det.h</SD>
+                                  </SDG>
+                                </SDG>
+                              </SDG>
+                              <SDG GID="DV:Feature:INIT_ONE_EARLY">
+                                <SD GID="DV:Name">InitPhase: INIT_ONE_EARLY</SD>
+                                <SD GID="DV:Value">FALSE</SD>
+                                <SDG GID="DV:Feature:Mcu_Init">
+                                  <SD GID="DV:Name">Mcu_Init</SD>
+                                  <SD GID="DV:Value">FALSE</SD>
+                                  <SDG GID="DV:Param:Mcu_Init_Function">
+                                    <SD GID="DV:Name">Mcu_Init Function</SD>
+                                    <SD GID="DV:Default">Mcu_InitClock(0);
+  while (MCU_PLL_LOCKED != Mcu_GetPllStatus());
+  Mcu_DistributePllClock();</SD>
+                                    <SD GID="DV:Value">Mcu_InitClock(0);
+  while (MCU_PLL_LOCKED != Mcu_GetPllStatus());
+  Mcu_DistributePllClock();</SD>
+                                  </SDG>
+                                  <SDG GID="DV:Param:Mcu_Init_Header">
+                                    <SD GID="DV:Name">Mcu_Init Header</SD>
+                                    <SD GID="DV:Default">Mcu.h</SD>
+                                    <SD GID="DV:Value">Mcu.h</SD>
+                                  </SDG>
+                                </SDG>
+                                <SDG GID="DV:Feature:Port_Init">
+                                  <SD GID="DV:Name">Port_Init</SD>
+                                  <SD GID="DV:Value">FALSE</SD>
+                                  <SDG GID="DV:Param:Port_Init_Function">
+                                    <SD GID="DV:Name">Port_Init Function</SD>
+                                    <SD GID="DV:Default">Port_Init(Port_ConfigRoot)</SD>
+                                    <SD GID="DV:Value">Port_Init(Port_ConfigRoot)</SD>
+                                  </SDG>
+                                  <SDG GID="DV:Param:Port_Init_Header">
+                                    <SD GID="DV:Name">Port_Init Header</SD>
+                                    <SD GID="DV:Default">Port.h</SD>
+                                    <SD GID="DV:Value">Port.h</SD>
+                                  </SDG>
+                                </SDG>
+                              </SDG>
+                              <SDG GID="DV:Feature:INIT_ONE">
+                                <SD GID="DV:Name">InitPhase: INIT_ONE</SD>
+                                <SD GID="DV:Value">TRUE</SD>
+                                <SDG GID="DV:Feature:Dio_Init">
+                                  <SD GID="DV:Name">Dio_Init</SD>
+                                  <SD GID="DV:Value">FALSE</SD>
+                                  <SDG GID="DV:Param:Dio_Init_Function">
+                                    <SD GID="DV:Name">Dio_Init Function</SD>
+                                    <SD GID="DV:Default">Dio_Init(Dio_ConfigRoot)</SD>
+                                    <SD GID="DV:Value">Dio_Init(Dio_ConfigRoot)</SD>
+                                  </SDG>
+                                  <SDG GID="DV:Param:Dio_Init_Header">
+                                    <SD GID="DV:Name">Dio_Init Header</SD>
+                                    <SD GID="DV:Default">Dio.h</SD>
+                                    <SD GID="DV:Value">Dio.h</SD>
+                                  </SDG>
+                                </SDG>
+                                <SDG GID="DV:Feature:Fls_17_Pmu_Init">
+                                  <SD GID="DV:Name">Fls_17_Pmu_Init</SD>
+                                  <SD GID="DV:Value">TRUE</SD>
+                                  <SDG GID="DV:Param:Fls_17_Pmu_Init_Function">
+                                    <SD GID="DV:Name">Fls_17_Pmu_Init Function</SD>
+                                    <SD GID="DV:Default">Fls_17_Pmu_Init(Fls_17_Pmu_ConfigRoot)</SD>
+                                    <SD GID="DV:Value">Fls_17_Pmu_Init(Fls_17_Pmu_ConfigRoot)</SD>
+                                  </SDG>
+                                  <SDG GID="DV:Param:Fls_17_Pmu_Init_Header">
+                                    <SD GID="DV:Name">Fls_17_Pmu_Init Header</SD>
+                                    <SD GID="DV:Default">Fls_17_Pmu.h</SD>
+                                    <SD GID="DV:Value">Fls_17_Pmu.h</SD>
+                                  </SDG>
+                                </SDG>
+                              </SDG>
+                              <SDG GID="DV:Feature:INIT_ONE_LATE">
+                                <SD GID="DV:Name">InitPhase: INIT_ONE_LATE</SD>
+                                <SD GID="DV:Value">TRUE</SD>
+                                <SDG GID="DV:Feature:Adc_Init">
+                                  <SD GID="DV:Name">Adc_Init</SD>
+                                  <SD GID="DV:Value">FALSE</SD>
+                                  <SDG GID="DV:Param:Adc_Init_Function">
+                                    <SD GID="DV:Name">Adc_Init Function</SD>
+                                    <SD GID="DV:Default">Adc_Init(Adc_ConfigRoot)</SD>
+                                    <SD GID="DV:Value">Adc_Init(Adc_ConfigRoot)</SD>
+                                  </SDG>
+                                  <SDG GID="DV:Param:Adc_Init_Header">
+                                    <SD GID="DV:Name">Adc_Init Header</SD>
+                                    <SD GID="DV:Default">Adc.h</SD>
+                                    <SD GID="DV:Value">Adc.h</SD>
+                                  </SDG>
+                                </SDG>
+                                <SDG GID="DV:Feature:Fee_Init">
+                                  <SD GID="DV:Name">Fee_Init</SD>
+                                  <SD GID="DV:Value">TRUE</SD>
+                                  <SDG GID="DV:Param:Fee_Init_Function">
+                                    <SD GID="DV:Name">Fee_Init Function</SD>
+                                    <SD GID="DV:Default">Fee_Init()</SD>
+                                    <SD GID="DV:Value">Fee_Init()</SD>
+                                  </SDG>
+                                  <SDG GID="DV:Param:Fee_Init_Header">
+                                    <SD GID="DV:Name">Fee_Init Header</SD>
+                                    <SD GID="DV:Default">Fee.h</SD>
+                                    <SD GID="DV:Value">Fee.h</SD>
+                                  </SDG>
+                                </SDG>
+                                <SDG GID="DV:Feature:Icu_17_GtmCcu6_Init">
+                                  <SD GID="DV:Name">Icu_17_GtmCcu6_Init</SD>
+                                  <SD GID="DV:Value">FALSE</SD>
+                                  <SDG GID="DV:Param:Icu_17_GtmCcu6_Init_Function">
+                                    <SD GID="DV:Name">Icu_17_GtmCcu6_Init Function</SD>
+                                    <SD GID="DV:Default">Icu_17_GtmCcu6_Init(Icu_ConfigRoot)</SD>
+                                    <SD GID="DV:Value">Icu_17_GtmCcu6_Init(Icu_ConfigRoot)</SD>
+                                  </SDG>
+                                  <SDG GID="DV:Param:Icu_17_GtmCcu6_Init_Header">
+                                    <SD GID="DV:Name">Icu_17_GtmCcu6_Init Header</SD>
+                                    <SD GID="DV:Default">Icu_17_GtmCcu6.h</SD>
+                                    <SD GID="DV:Value">Icu_17_GtmCcu6.h</SD>
+                                  </SDG>
+                                </SDG>
+                              </SDG>
+                              <SDG GID="DV:Feature:INIT_TWO_TRCV">
+                                <SD GID="DV:Name">InitPhase: INIT_TWO_TRCV</SD>
+                                <SD GID="DV:Value">TRUE</SD>
+                                <SDG GID="DV:Feature:CanTrcv_30_Tja1043_Init">
+                                  <SD GID="DV:Name">CanTrcv_30_Tja1043_Init</SD>
+                                  <SD GID="DV:Value">TRUE</SD>
+                                  <SDG GID="DV:Param:CanTrcv_30_Tja1043_Init_Function">
+                                    <SD GID="DV:Name">CanTrcv_30_Tja1043_Init Function</SD>
+                                    <SD GID="DV:Default">CanTrcv_30_Tja1043_Init(CanTrcv_30_Tja1043_Config_Ptr)</SD>
+                                    <SD GID="DV:Value">CanTrcv_30_Tja1043_Init(CanTrcv_30_Tja1043_Config_Ptr)</SD>
+                                  </SDG>
+                                  <SDG GID="DV:Param:CanTrcv_30_Tja1043_Init_Header">
+                                    <SD GID="DV:Name">CanTrcv_30_Tja1043_Init Header</SD>
+                                    <SD GID="DV:Default">CanTrcv_30_Tja1043.h</SD>
+                                    <SD GID="DV:Value">CanTrcv_30_Tja1043.h</SD>
+                                  </SDG>
+                                </SDG>
+                              </SDG>
+                              <SDG GID="DV:Feature:INIT_TWO_DRV">
+                                <SD GID="DV:Name">InitPhase: INIT_TWO_DRV</SD>
+                                <SD GID="DV:Value">TRUE</SD>
+                                <SDG GID="DV:Feature:Can_Init">
+                                  <SD GID="DV:Name">Can_Init</SD>
+                                  <SD GID="DV:Value">TRUE</SD>
+                                  <SDG GID="DV:Param:Can_Init_Function">
+                                    <SD GID="DV:Name">Can_Init Function</SD>
+                                    <SD GID="DV:Default">Can_Init(Can_Config_Ptr)</SD>
+                                    <SD GID="DV:Value">Can_Init(Can_Config_Ptr)</SD>
+                                  </SDG>
+                                  <SDG GID="DV:Param:Can_Init_Header">
+                                    <SD GID="DV:Name">Can_Init Header</SD>
+                                    <SD GID="DV:Default">Can.h</SD>
+                                    <SD GID="DV:Value">Can.h</SD>
+                                  </SDG>
+                                </SDG>
+                              </SDG>
+                              <SDG GID="DV:Feature:INIT_TWO_IF">
+                                <SD GID="DV:Name">InitPhase: INIT_TWO_IF</SD>
+                                <SD GID="DV:Value">TRUE</SD>
+                                <SDG GID="DV:Feature:CanIf_Init">
+                                  <SD GID="DV:Name">CanIf_Init</SD>
+                                  <SD GID="DV:Value">TRUE</SD>
+                                  <SDG GID="DV:Param:CanIf_Init_Function">
+                                    <SD GID="DV:Name">CanIf_Init Function</SD>
+                                    <SD GID="DV:Default">CanIf_Init(CanIf_Config_Ptr)</SD>
+                                    <SD GID="DV:Value">CanIf_Init(CanIf_Config_Ptr)</SD>
+                                  </SDG>
+                                  <SDG GID="DV:Param:CanIf_Init_Header">
+                                    <SD GID="DV:Name">CanIf_Init Header</SD>
+                                    <SD GID="DV:Default">CanIf.h</SD>
+                                    <SD GID="DV:Value">CanIf.h</SD>
+                                  </SDG>
+                                </SDG>
+                              </SDG>
+                              <SDG GID="DV:Feature:INIT_TWO_COM">
+                                <SD GID="DV:Name">InitPhase: INIT_TWO_COM</SD>
+                                <SD GID="DV:Value">TRUE</SD>
+                                <SDG GID="DV:Feature:Com_Init">
+                                  <SD GID="DV:Name">Com_Init</SD>
+                                  <SD GID="DV:Value">TRUE</SD>
+                                  <SDG GID="DV:Param:Com_Init_Function">
+                                    <SD GID="DV:Name">Com_Init Function</SD>
+                                    <SD GID="DV:Default">Com_Init(Com_Config_Ptr)</SD>
+                                    <SD GID="DV:Value">Com_Init(Com_Config_Ptr)</SD>
+                                  </SDG>
+                                  <SDG GID="DV:Param:Com_Init_Header">
+                                    <SD GID="DV:Name">Com_Init Header</SD>
+                                    <SD GID="DV:Default">Com.h</SD>
+                                    <SD GID="DV:Value">Com.h</SD>
+                                  </SDG>
+                                </SDG>
+                                <SDG GID="DV:Feature:PduR_Init">
+                                  <SD GID="DV:Name">PduR_Init</SD>
+                                  <SD GID="DV:Value">TRUE</SD>
+                                  <SDG GID="DV:Param:PduR_Init_Function">
+                                    <SD GID="DV:Name">PduR_Init Function</SD>
+                                    <SD GID="DV:Default">PduR_Init(PduR_Config_Ptr)</SD>
+                                    <SD GID="DV:Value">PduR_Init(PduR_Config_Ptr)</SD>
+                                  </SDG>
+                                  <SDG GID="DV:Param:PduR_Init_Header">
+                                    <SD GID="DV:Name">PduR_Init Header</SD>
+                                    <SD GID="DV:Default">PduR.h</SD>
+                                    <SD GID="DV:Value">PduR.h</SD>
+                                  </SDG>
+                                </SDG>
+                              </SDG>
+                              <SDG GID="DV:Feature:INIT_TWO_SM">
+                                <SD GID="DV:Name">InitPhase: INIT_TWO_SM</SD>
+                                <SD GID="DV:Value">TRUE</SD>
+                                <SDG GID="DV:Feature:CanSM_Init">
+                                  <SD GID="DV:Name">CanSM_Init</SD>
+                                  <SD GID="DV:Value">TRUE</SD>
+                                  <SDG GID="DV:Param:CanSM_Init_Function">
+                                    <SD GID="DV:Name">CanSM_Init Function</SD>
+                                    <SD GID="DV:Default">CanSM_Init(CanSM_Config_Ptr)</SD>
+                                    <SD GID="DV:Value">CanSM_Init(CanSM_Config_Ptr)</SD>
+                                  </SDG>
+                                  <SDG GID="DV:Param:CanSM_Init_Header">
+                                    <SD GID="DV:Name">CanSM_Init Header</SD>
+                                    <SD GID="DV:Default">CanSM_EcuM.h</SD>
+                                    <SD GID="DV:Value">CanSM_EcuM.h</SD>
+                                  </SDG>
+                                </SDG>
+                              </SDG>
+                              <SDG GID="DV:Feature:INIT_TWO_NM">
+                                <SD GID="DV:Name">InitPhase: INIT_TWO_NM</SD>
+                                <SD GID="DV:Value">TRUE</SD>
+                                <SDG GID="DV:Feature:CanNm_Init">
+                                  <SD GID="DV:Name">CanNm_Init</SD>
+                                  <SD GID="DV:Value">TRUE</SD>
+                                  <SDG GID="DV:Param:CanNm_Init_Function">
+                                    <SD GID="DV:Name">CanNm_Init Function</SD>
+                                    <SD GID="DV:Default">CanNm_Init(CanNm_Config_Ptr)</SD>
+                                    <SD GID="DV:Value">CanNm_Init(CanNm_Config_Ptr)</SD>
+                                  </SDG>
+                                  <SDG GID="DV:Param:CanNm_Init_Header">
+                                    <SD GID="DV:Name">CanNm_Init Header</SD>
+                                    <SD GID="DV:Default">CanNm.h</SD>
+                                    <SD GID="DV:Value">CanNm.h</SD>
+                                  </SDG>
+                                </SDG>
+                                <SDG GID="DV:Feature:Nm_Init">
+                                  <SD GID="DV:Name">Nm_Init</SD>
+                                  <SD GID="DV:Value">TRUE</SD>
+                                  <SDG GID="DV:Param:Nm_Init_Function">
+                                    <SD GID="DV:Name">Nm_Init Function</SD>
+                                    <SD GID="DV:Default">Nm_Init()</SD>
+                                    <SD GID="DV:Value">Nm_Init()</SD>
+                                  </SDG>
+                                  <SDG GID="DV:Param:Nm_Init_Header">
+                                    <SD GID="DV:Name">Nm_Init Header</SD>
+                                    <SD GID="DV:Default">Nm.h</SD>
+                                    <SD GID="DV:Value">Nm.h</SD>
+                                  </SDG>
+                                </SDG>
+                              </SDG>
+                              <SDG GID="DV:Feature:INIT_TWO_TP">
+                                <SD GID="DV:Name">InitPhase: INIT_TWO_TP</SD>
+                                <SD GID="DV:Value">TRUE</SD>
+                                <SDG GID="DV:Feature:CanTp_Init">
+                                  <SD GID="DV:Name">CanTp_Init</SD>
+                                  <SD GID="DV:Value">TRUE</SD>
+                                  <SDG GID="DV:Param:CanTp_Init_Function">
+                                    <SD GID="DV:Name">CanTp_Init Function</SD>
+                                    <SD GID="DV:Default">CanTp_Init(CanTp_Config_Ptr)</SD>
+                                    <SD GID="DV:Value">CanTp_Init(CanTp_Config_Ptr)</SD>
+                                  </SDG>
+                                  <SDG GID="DV:Param:CanTp_Init_Header">
+                                    <SD GID="DV:Name">CanTp_Init Header</SD>
+                                    <SD GID="DV:Default">CanTp.h</SD>
+                                    <SD GID="DV:Value">CanTp.h</SD>
+                                  </SDG>
+                                </SDG>
+                              </SDG>
+                              <SDG GID="DV:Feature:INIT_TWO_SYS">
+                                <SD GID="DV:Name">InitPhase: INIT_TWO_SYS</SD>
+                                <SD GID="DV:Value">TRUE</SD>
+                                <SDG GID="DV:Feature:NvM_Init">
+                                  <SD GID="DV:Name">NvM_Init</SD>
+                                  <SD GID="DV:Value">TRUE</SD>
+                                  <SDG GID="DV:Param:NvM_Init_Function">
+                                    <SD GID="DV:Name">NvM_Init Function</SD>
+                                    <SD GID="DV:Default">NvM_Init()</SD>
+                                    <SD GID="DV:Value">NvM_Init()</SD>
+                                  </SDG>
+                                  <SDG GID="DV:Param:NvM_Init_Header">
+                                    <SD GID="DV:Name">NvM_Init Header</SD>
+                                    <SD GID="DV:Default">NvM.h</SD>
+                                    <SD GID="DV:Value">NvM.h</SD>
+                                  </SDG>
+                                </SDG>
+                              </SDG>
+                              <SDG GID="DV:Feature:INIT_TWO_POST_NVMREADALL">
+                                <SD GID="DV:Name">InitPhase: INIT_TWO_POST_NVMREADALL</SD>
+                                <SD GID="DV:Value">TRUE</SD>
+                                <SDG GID="DV:Feature:ComM_Init">
+                                  <SD GID="DV:Name">ComM_Init</SD>
+                                  <SD GID="DV:Value">TRUE</SD>
+                                  <SDG GID="DV:Param:ComM_Init_Function">
+                                    <SD GID="DV:Name">ComM_Init Function</SD>
+                                    <SD GID="DV:Default">ComM_Init()</SD>
+                                    <SD GID="DV:Value">ComM_Init()</SD>
+                                  </SDG>
+                                  <SDG GID="DV:Param:ComM_Init_Header">
+                                    <SD GID="DV:Name">ComM_Init Header</SD>
+                                    <SD GID="DV:Default">ComM.h</SD>
+                                    <SD GID="DV:Value">ComM.h</SD>
+                                  </SDG>
+                                </SDG>
+                                <SDG GID="DV:Feature:Dcm_Init">
+                                  <SD GID="DV:Name">Dcm_Init</SD>
+                                  <SD GID="DV:Value">TRUE</SD>
+                                  <SDG GID="DV:Param:Dcm_Init_Function">
+                                    <SD GID="DV:Name">Dcm_Init Function</SD>
+                                    <SD GID="DV:Default">Dcm_Init(NULL_PTR)</SD>
+                                    <SD GID="DV:Value">Dcm_Init(NULL_PTR)</SD>
+                                  </SDG>
+                                  <SDG GID="DV:Param:Dcm_Init_Header">
+                                    <SD GID="DV:Name">Dcm_Init Header</SD>
+                                    <SD GID="DV:Default">Dcm.h</SD>
+                                    <SD GID="DV:Value">Dcm.h</SD>
+                                  </SDG>
+                                </SDG>
+                                <SDG GID="DV:Feature:Dem_Init">
+                                  <SD GID="DV:Name">Dem_Init</SD>
+                                  <SD GID="DV:Value">TRUE</SD>
+                                  <SDG GID="DV:Param:Dem_Init_Function">
+                                    <SD GID="DV:Name">Dem_Init Function</SD>
+                                    <SD GID="DV:Default">Dem_Init(Dem_Config_Ptr)</SD>
+                                    <SD GID="DV:Value">Dem_Init(Dem_Config_Ptr)</SD>
+                                  </SDG>
+                                  <SDG GID="DV:Param:Dem_Init_Header">
+                                    <SD GID="DV:Name">Dem_Init Header</SD>
+                                    <SD GID="DV:Default">Dem.h</SD>
+                                    <SD GID="DV:Value">Dem.h</SD>
+                                  </SDG>
+                                </SDG>
+                                <SDG GID="DV:Feature:IoHwAb_Init">
+                                  <SD GID="DV:Name">IoHwAb_Init</SD>
+                                  <SD GID="DV:Value">FALSE</SD>
+                                  <SDG GID="DV:Param:IoHwAb_Init_Function">
+                                    <SD GID="DV:Name">IoHwAb_Init Function</SD>
+                                    <SD GID="DV:Default">IoHwAb_Init()</SD>
+                                    <SD GID="DV:Value">IoHwAb_Init()</SD>
+                                  </SDG>
+                                  <SDG GID="DV:Param:IoHwAb_Init_Header">
+                                    <SD GID="DV:Name">IoHwAb_Init Header</SD>
+                                    <SD GID="DV:Default">IoHwAb.h</SD>
+                                    <SD GID="DV:Value">IoHwAb.h</SD>
+                                  </SDG>
+                                </SDG>
+                              </SDG>
+                              <SDG GID="DV:Feature:INIT_THREE">
+                                <SD GID="DV:Name">InitPhase: INIT_THREE</SD>
+                                <SD GID="DV:Value">TRUE</SD>
+                                <SDG GID="DV:Feature:Rte_Start">
+                                  <SD GID="DV:Name">Rte_Start</SD>
+                                  <SD GID="DV:Value">TRUE</SD>
+                                  <SDG GID="DV:Param:Rte_Start_Function">
+                                    <SD GID="DV:Name">Rte_Start Function</SD>
+                                    <SD GID="DV:Default">Rte_Start()</SD>
+                                    <SD GID="DV:Value">Rte_Start()</SD>
+                                  </SDG>
+                                  <SDG GID="DV:Param:Rte_Start_Header">
+                                    <SD GID="DV:Name">Rte_Start Header</SD>
+                                    <SD GID="DV:Default">Rte_Main.h</SD>
+                                    <SD GID="DV:Value">Rte_Main.h</SD>
+                                  </SDG>
+                                </SDG>
+                              </SDG>
+                            </SDG>
+                            <SDG GID="DV:Feature:InitForeignModules">
+                              <SD GID="DV:Name">Initialize foreign modules</SD>
+                              <SD GID="DV:Value">FALSE</SD>
+                              <SDG GID="DV:Feature:Cdd_Init">
+                                <SD GID="DV:Name">Cdd_Init</SD>
+                                <SD GID="DV:Value">FALSE</SD>
+                                <SDG GID="DV:Param:Cdd_Init_Function">
+                                  <SD GID="DV:Name">Cdd_Init Function</SD>
+                                  <SD GID="DV:Default">Cdd_Init(NULL_PTR)</SD>
+                                  <SD GID="DV:Value">Cdd_Init(NULL_PTR)</SD>
+                                </SDG>
+                                <SDG GID="DV:Param:Cdd_Init_Header">
+                                  <SD GID="DV:Name">Cdd_Init Header</SD>
+                                  <SD GID="DV:Default">Cdd.h</SD>
+                                  <SD GID="DV:Value">Cdd.h</SD>
+                                </SDG>
+                              </SDG>
+                              <SDG GID="DV:Feature:E2EPW_Init">
+                                <SD GID="DV:Name">E2EPW_Init</SD>
+                                <SD GID="DV:Value">FALSE</SD>
+                                <SDG GID="DV:Param:E2EPW_Init_Function">
+                                  <SD GID="DV:Name">E2EPW_Init Function</SD>
+                                  <SD GID="DV:Default">E2EPW_Init(NULL_PTR)</SD>
+                                  <SD GID="DV:Value">E2EPW_Init(NULL_PTR)</SD>
+                                </SDG>
+                                <SDG GID="DV:Param:E2EPW_Init_Header">
+                                  <SD GID="DV:Name">E2EPW_Init Header</SD>
+                                  <SD GID="DV:Default">E2EPW.h</SD>
+                                  <SD GID="DV:Value">E2EPW.h</SD>
+                                </SDG>
+                              </SDG>
+                              <SDG GID="DV:Feature:Irq_Init">
+                                <SD GID="DV:Name">Irq_Init</SD>
+                                <SD GID="DV:Value">FALSE</SD>
+                                <SDG GID="DV:Param:Irq_Init_Function">
+                                  <SD GID="DV:Name">Irq_Init Function</SD>
+                                  <SD GID="DV:Default">Irq_Init(NULL_PTR)</SD>
+                                  <SD GID="DV:Value">Irq_Init(NULL_PTR)</SD>
+                                </SDG>
+                                <SDG GID="DV:Param:Irq_Init_Header">
+                                  <SD GID="DV:Name">Irq_Init Header</SD>
+                                  <SD GID="DV:Default">Irq.h</SD>
+                                  <SD GID="DV:Value">Irq.h</SD>
+                                </SDG>
+                              </SDG>
+                              <SDG GID="DV:Feature:Resource_Init">
+                                <SD GID="DV:Name">Resource_Init</SD>
+                                <SD GID="DV:Value">FALSE</SD>
+                                <SDG GID="DV:Param:Resource_Init_Function">
+                                  <SD GID="DV:Name">Resource_Init Function</SD>
+                                  <SD GID="DV:Default">Resource_Init(NULL_PTR)</SD>
+                                  <SD GID="DV:Value">Resource_Init(NULL_PTR)</SD>
+                                </SDG>
+                                <SDG GID="DV:Param:Resource_Init_Header">
+                                  <SD GID="DV:Name">Resource_Init Header</SD>
+                                  <SD GID="DV:Default">Resource.h</SD>
+                                  <SD GID="DV:Value">Resource.h</SD>
+                                </SDG>
+                              </SDG>
+                              <SDG GID="DV:Feature:vBaseEnv_Init">
+                                <SD GID="DV:Name">vBaseEnv_Init</SD>
+                                <SD GID="DV:Value">FALSE</SD>
+                                <SDG GID="DV:Param:vBaseEnv_Init_Function">
+                                  <SD GID="DV:Name">vBaseEnv_Init Function</SD>
+                                  <SD GID="DV:Default">vBaseEnv_Init(NULL_PTR)</SD>
+                                  <SD GID="DV:Value">vBaseEnv_Init(NULL_PTR)</SD>
+                                </SDG>
+                                <SDG GID="DV:Param:vBaseEnv_Init_Header">
+                                  <SD GID="DV:Name">vBaseEnv_Init Header</SD>
+                                  <SD GID="DV:Default">vBaseEnv.h</SD>
+                                  <SD GID="DV:Value">vBaseEnv.h</SD>
+                                </SDG>
+                              </SDG>
+                              <SDG GID="DV:Feature:vLinkGen_Init">
+                                <SD GID="DV:Name">vLinkGen_Init</SD>
+                                <SD GID="DV:Value">FALSE</SD>
+                                <SDG GID="DV:Param:vLinkGen_Init_Function">
+                                  <SD GID="DV:Name">vLinkGen_Init Function</SD>
+                                  <SD GID="DV:Default">vLinkGen_Init(NULL_PTR)</SD>
+                                  <SD GID="DV:Value">vLinkGen_Init(NULL_PTR)</SD>
+                                </SDG>
+                                <SDG GID="DV:Param:vLinkGen_Init_Header">
+                                  <SD GID="DV:Name">vLinkGen_Init Header</SD>
+                                  <SD GID="DV:Default">vLinkGen.h</SD>
+                                  <SD GID="DV:Value">vLinkGen.h</SD>
+                                </SDG>
+                              </SDG>
+                              <SDG GID="DV:Feature:vSet_Init">
+                                <SD GID="DV:Name">vSet_Init</SD>
+                                <SD GID="DV:Value">FALSE</SD>
+                                <SDG GID="DV:Param:vSet_Init_Function">
+                                  <SD GID="DV:Name">vSet_Init Function</SD>
+                                  <SD GID="DV:Default">vSet_Init(NULL_PTR)</SD>
+                                  <SD GID="DV:Value">vSet_Init(NULL_PTR)</SD>
+                                </SDG>
+                                <SDG GID="DV:Param:vSet_Init_Header">
+                                  <SD GID="DV:Name">vSet_Init Header</SD>
+                                  <SD GID="DV:Default">vSet.h</SD>
+                                  <SD GID="DV:Value">vSet.h</SD>
+                                </SDG>
+                              </SDG>
+                            </SDG>
+                          </SDG>
+                          <SDG GID="DV:ESH">
+                            <SD GID="DV:Version">16.00.00.2</SD>
+                            <SDG GID="DV:Feature:ECU_State_Machine">
+                              <SD GID="DV:Name">ECU State Machine</SD>
+                              <SD GID="DV:Value">TRUE</SD>
+                              <SDG GID="DV:Param:Self_Run_Request_Timeout">
+                                <SD GID="DV:Name">Self Run Request Timeout</SD>
+                                <SD GID="DV:Default">0.1</SD>
+                                <SD GID="DV:Value">2</SD>
+                              </SDG>
+                              <SDG GID="DV:Param:Run_User">
+                                <SD GID="DV:Name">Number of Run Request User</SD>
+                                <SD GID="DV:Default">0</SD>
+                                <SD GID="DV:Value">2</SD>
+                              </SDG>
+                              <SDG GID="DV:Param:PostRun_User">
+                                <SD GID="DV:Name">Number of PostRun Request User</SD>
+                                <SD GID="DV:Default">0</SD>
+                                <SD GID="DV:Value">2</SD>
+                              </SDG>
+                              <SDG GID="DV:Param:Kill_All_Run_Request_Port">
+                                <SD GID="DV:Name">Kill All Run Request Port</SD>
+                                <SD GID="DV:Default">false</SD>
+                                <SD GID="DV:Value">false</SD>
+                              </SDG>
+                              <SDG GID="DV:Feature:Dem_Handling">
+                                <SD GID="DV:Name">Dem Handling</SD>
+                                <SD GID="DV:Value">TRUE</SD>
+                              </SDG>
+                              <SDG GID="DV:Feature:Support_ComM">
+                                <SD GID="DV:Name">Support ComM</SD>
+                                <SD GID="DV:Value">TRUE</SD>
+                                <SDG GID="DV:Feature:CN_DBCNetWork_05d62413">
+                                  <SD GID="DV:Name">CN_DBCNetWork_05d62413</SD>
+                                  <SD GID="DV:Value">TRUE</SD>
+                                </SDG>
+                                <SDG GID="DV:Feature:CN_DBCNetWork_INTER1_9768a826">
+                                  <SD GID="DV:Name">CN_DBCNetWork_INTER1_9768a826</SD>
+                                  <SD GID="DV:Value">TRUE</SD>
+                                </SDG>
+                              </SDG>
+                              <SDG GID="DV:Feature:NvM_Handling">
+                                <SD GID="DV:Name">NvM Handling</SD>
+                                <SD GID="DV:Value">TRUE</SD>
+                                <SDG GID="DV:Param:NvM_Write_All_Timeout">
+                                  <SD GID="DV:Name">NvM Write All Timeout</SD>
+                                  <SD GID="DV:Default">60</SD>
+                                  <SD GID="DV:Value">60</SD>
+                                </SDG>
+                                <SDG GID="DV:Param:NvM_Cancel_Write_All_Timeout">
+                                  <SD GID="DV:Name">NvM Cancel Write All Timeout</SD>
+                                  <SD GID="DV:Default">60</SD>
+                                  <SD GID="DV:Value">60</SD>
+                                </SDG>
+                              </SDG>
+                              <SDG GID="DV:Feature:Rte_Mode_Synchronization">
+                                <SD GID="DV:Name">Rte Mode Synchronization</SD>
+                                <SD GID="DV:Value">TRUE</SD>
+                              </SDG>
+                              <SDG GID="DV:Feature:Enable_Callouts">
+                                <SD GID="DV:Name">Enable Callouts</SD>
+                                <SD GID="DV:Value">TRUE</SD>
+                              </SDG>
+                              <SDG GID="DV:Feature:EcuM_Mode_Handling">
+                                <SD GID="DV:Name">EcuM Mode Handling</SD>
+                                <SD GID="DV:Value">FALSE</SD>
+                              </SDG>
+                            </SDG>
+                          </SDG>
+                        </SDG>
+                      </SDG>
+                    </SDGS>
+                  </ADMIN-DATA>
+                  <DEFINITION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/MICROSAR/BswM/BswMGeneral/BswMCommonData</DEFINITION-REF>
+                </ECUC-CONTAINER-VALUE>
+                <ECUC-CONTAINER-VALUE UUID="182536cb-024d-460f-94d0-6ea951234c80">
+                  <SHORT-NAME>BswMGeneration</SHORT-NAME>
+                  <DEFINITION-REF DEST="ECUC-PARAM-CONF-CONTAINER-DEF">/MICROSAR/BswM/BswMGeneral/BswMGeneration</DEFINITION-REF>
+                  <PARAMETER-VALUES>
+                    <ECUC-NUMERICAL-PARAM-VALUE>
+                      <DEFINITION-REF DEST="ECUC-BOOLEAN-PARAM-DEF">/MICROSAR/BswM/BswMGeneral/BswMGeneration/BswMOutOfBoundsWriteSanitizer</DEFINITION-REF>
+                      <VALUE>false</VALUE>
+                    </ECUC-NUMERICAL-PARAM-VALUE>
+                    <ECUC-NUMERICAL-PARAM-VALUE>
+                      <DEFINITION-REF DEST="ECUC-BOOLEAN-PARAM-DEF">/MICROSAR/BswM/BswMGeneral/BswMGeneration/BswMOutOfBoundsReadSanitizer</DEFINITION-REF>
+                      <VALUE>false</VALUE>
+                    </ECUC-NUMERICAL-PARAM-VALUE>
+                    <ECUC-NUMERICAL-PARAM-VALUE>
+                      <DEFINITION-REF DEST="ECUC-BOOLEAN-PARAM-DEF">/MICROSAR/BswM/BswMGeneral/BswMGeneration/BswMReduceConstantData2Define</DEFINITION-REF>
+                      <VALUE>true</VALUE>
+                    </ECUC-NUMERICAL-PARAM-VALUE>
+                    <ECUC-TEXTUAL-PARAM-VALUE>
+                      <DEFINITION-REF DEST="ECUC-ENUMERATION-PARAM-DEF">/MICROSAR/BswM/BswMGeneral/BswMGeneration/BswMBoolDataInArrayOfStructStrategy</DEFINITION-REF>
+                      <VALUE>BITMASKING</VALUE>
+                    </ECUC-TEXTUAL-PARAM-VALUE>
+                    <ECUC-NUMERICAL-PARAM-VALUE>
+                      <DEFINITION-REF DEST="ECUC-BOOLEAN-PARAM-DEF">/MICROSAR/BswM/BswMGeneral/BswMGeneration/BswMInterfacesForDeactivatedData</DEFINITION-REF>
+                      <VALUE>false</VALUE>
+                    </ECUC-NUMERICAL-PARAM-VALUE>
+                  </PARAMETER-VALUES>
+                </ECUC-CONTAINER-VALUE>
+              </SUB-CONTAINERS>
+            </ECUC-CONTAINER-VALUE>
+          </CONTAINERS>
+        </ECUC-MODULE-CONFIGURATION-VALUES>
+      </ELEMENTS>
+    </AR-PACKAGE>
+  </AR-PACKAGES>
+</AUTOSAR>

@@ -43,3 +43,52 @@
 Thumbs.db
 Desktop.ini
 .DS_Store
+
+# 调试临时文件
+__connection_failed_report__*.txt
+*.bak
+
+# UDE 工作区 / 本地 IDE 状态
+tc27UDESTK.wsx
+*.wsx
+
+# 生成日志（Bsw_Config 下的 GenerationReport/UpdateReport）
+01_Project/TC275_demo/project/Bsw_Config/Cfg/Log/
+
+# MCAL 配置工程的 IDE 元数据
+01_Project/TC275_demo/project/Mcal_Config/.metadata/
+01_Project/TC275_demo/project/Mcal_Config/tc275XX/.metadata/
+
+# 英飞凌 iLLD 底层库（第三方，不跟踪）
+01_Project/TC275_demo/project/TC275/_05_iLLD/
+
+# 参考工程 / 测试工程（不进仓库）
+01_Project/TC275_demo/Ads_FOC_Reference/
+01_Project/TC275_demo/Tricore_TC275_SIP/
+01_Project/TC275_demo/project/TriBoard_TC27xD.cfg.bak
+
+# 根目录大型 PDF（TC27x 用户手册 24MB，不进 git）
+/*.pdf
+
+# 04_Docs 下的外部资料库（AUTOSAR 规范/ISO 标准/教程 PDF，体积大不进 git）
+# 只保留 01_项目文档/ 和 02_硬件资料/
+04_Docs/03_B727-AUTOSAR实战教程/
+04_Docs/04_AUTOSAR文档教程/
+04_Docs/05_AUTOSAR行业资料/
+04_Docs/06_AUTOSAR_4.3规范/
+04_Docs/Autosar参考资料/
+04_Docs/ISO11898-CAN/
+04_Docs/ISO14229-网络诊断/
+04_Docs/ISO15765-网络层/
+04_Docs/OSEK/
+04_Docs/编译原理资料/
+04_Docs/99_脚本工具/
+04_Docs/*.pdf
+
+# ADS 工程下的 IDE 配置目录
+01_Project/TC275_demo/project/.metadata/
+01_Project/TC275_demo/project/TC275/DConfig/
+01_Project/TC275_demo/project/TC275/MConfig/
+
+# Office 打开时的临时锁文件
+~$*

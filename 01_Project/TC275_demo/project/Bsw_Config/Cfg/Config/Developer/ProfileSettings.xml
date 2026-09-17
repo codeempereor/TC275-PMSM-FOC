@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PROFILE>
+	<Version>1.0</Version>
+	<SECTION NAME="DEFAULT_FILES">
+		<KEYVALPAIR KEY="DefaultFile_Packages" VAL="Packages_1.arxml" />
+		<KEYVALPAIR KEY="DefaultFile_BaseTypes" VAL="DataTypes_1.arxml" />
+		<KEYVALPAIR KEY="DefaultFile_CompuMethods" VAL="DataTypes_1.arxml" />
+		<KEYVALPAIR KEY="DefaultFile_DataConstrs" VAL="DataTypes_1.arxml" />
+		<KEYVALPAIR KEY="DefaultFile_DataTypeMappingSets" VAL="DataTypes_1.arxml" />
+		<KEYVALPAIR KEY="DefaultFile_DataTypes" VAL="DataTypes_1.arxml" />
+		<KEYVALPAIR KEY="DefaultFile_Units" VAL="DataTypes_1.arxml" />
+		<KEYVALPAIR KEY="DefaultFile_ModeDeclarationGroups" VAL="PortInterfaces_1.arxml" />
+		<KEYVALPAIR KEY="DefaultFile_SwAddrMethods" VAL="PortInterfaces_1.arxml" />
+		<KEYVALPAIR KEY="DefaultFile_PortInterfaces" VAL="PortInterfaces_1.arxml" />
+		<KEYVALPAIR KEY="DefaultFile_PortInterfaceMappings" VAL="PortInterfaces_1.arxml" />
+	</SECTION>
+</PROFILE>
