@@ -92,3 +92,20 @@ tc27UDESTK.wsx
 
 # Office 打开时的临时锁文件
 ~$*
+
+# ADS 工作区（2026-09-18 从 E:\ADS_Workspace 迁入）
+# 自研 FOC 源码纳入 git 跟踪；Blinky 为例程副本、Libraries 为 iLLD 第三方库、.ads 为 IDE 状态，均不跟踪
+01_Project/ADS_Workspace/.metadata/
+01_Project/ADS_Workspace/Blinky_LED_1_KIT_TC275_LK/
+01_Project/ADS_Workspace/**/Libraries/
+01_Project/ADS_Workspace/**/.ads/
+
+# large third-party board manual (88MB), kept locally, not tracked
+04_Docs/02_硬件资料/硬石*.pdf
+
+# local github push helpers (proxy/known_hosts/hosts backup), not tracked
+/gh_proxy.py
+/gh_known_hosts
+/gh_proxy.log
+/gh_proxy.err.log
+/hosts.backup

@@ -72,8 +72,7 @@ int core0_main(void)
         for (volatile int j = 0; j < LOOP_DELAY; j++);
     }
 
-    /* fault: release motor (all phases 50% = zero line voltage), LED off */
-    FOC_PWM_SetDutyPercent(0.5f, 0.5f, 0.5f);
+    /* fault: LED off */
     IfxPort_setPinHigh(PIN_LED1);
     while (1);
     return (1);
