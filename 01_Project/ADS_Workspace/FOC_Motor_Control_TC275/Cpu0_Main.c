@@ -3,6 +3,7 @@
 #include "IfxScuWdt.h"
 #include "FOC_DRV8305.h"
 #include "FOC_PWM.h"
+#include "FOC_UART.h"
 #include "IfxPort.h"
 
 IfxCpu_syncEvent g_cpuSyncEvent = 0;
@@ -118,16 +119,32 @@ int core0_main(void)
 
     IfxPort_setPinLow(PIN_LED1);
 
+    FOC_UART_Init();
+    FOC_UART_Print("\r\nFOC Motor Control Started\r\n");
+
     /* Start the open-loop spin from the ISR. Before this, g_running=0 so the
      * ISR just acks and returns, PWM stays at 50% (symmetric, motor still). */
     g_running = 1;
 
+    uint32 tick = 0;
     while (1)
     {
         if (IfxPort_getPinState(PIN_NFAULT) == 0)
         {
             g_running = 0;
             break;
+        }
+
+        /* Print phase value every ~0.5s (main loop is fast, gate by counter) */
+        tick++;
+        if (tick >= 500000)
+        {
+            tick = 0;
+            FOC_UART_Print("Phase=");
+            FOC_UART_PrintFloat(g_phase, 2);
+            FOC_UART_Print("  Running=");
+            FOC_UART_PrintInt(g_running);
+            FOC_UART_Print("\r\n");
         }
     }
 
