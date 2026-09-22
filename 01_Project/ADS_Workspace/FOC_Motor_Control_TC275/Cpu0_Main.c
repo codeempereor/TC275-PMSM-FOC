@@ -22,7 +22,7 @@ static const float32 sin_lut[64] = {
     -0.7071f,-0.6344f,-0.5556f,-0.4714f,-0.3827f,-0.2903f,-0.1951f,-0.0980f
 };
 
-#define DUTY_AMPLITUDE   0.20f
+#define DUTY_AMPLITUDE   0.10f
 
 /*
  * PWM period ISR runs at 20kHz (same as PWM).
