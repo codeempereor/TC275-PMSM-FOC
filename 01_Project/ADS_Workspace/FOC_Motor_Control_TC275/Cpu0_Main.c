@@ -26,20 +26,31 @@ static const float32 sin_lut[64] = {
 
 /*
  * PWM period ISR runs at 20kHz (same as PWM).
- * We divide by PWM_ISR_DIV to get the sin LUT update rate.
- *   update_rate = 20000 / PWM_ISR_DIV  Hz
- *   elec freq   = update_rate / 64     Hz
- *   rpm         = elec_freq * 60 / pole_pairs
- * DIV=150 -> update 133Hz -> elec 2.08Hz -> ~18rpm (matches old busy-loop)
+ * Phase is a float in units of sin LUT index (0..64). Each ISR we add
+ * PHASE_INC, so the electrical angle rotates continuously (no steps).
+ *   PHASE_INC = 1.0 / PWM_ISR_DIV
+ *   elec freq = 20000 * PHASE_INC / 64
+ * DIV=150 -> 133 LUT-updates/sec -> elec 2.08Hz -> ~18rpm
  */
-#define PWM_ISR_DIV      150
+#define PWM_ISR_DIV      150.0f
+#define PHASE_INC        (1.0f / PWM_ISR_DIV)
+
+/* 120 deg offset in LUT units (64/3 = 21.333) */
+#define OFF_B            21.3333f
+#define OFF_C            42.6667f
+
+static inline float32 sin_lut_interp(float32 phase)
+{
+    if (phase >= 64.0f) phase -= 64.0f;
+    uint8 idx = (uint8)phase;
+    uint8 idx1 = (idx + 1) & 63;
+    float32 frac = phase - (float32)idx;
+    return sin_lut[idx] + frac * (sin_lut[idx1] - sin_lut[idx]);
+}
 
 /* Volatile state shared between main loop and ISR */
-static volatile uint8  g_running = 0;       /* set 1 by main to start spin, 0 on fault */
-static volatile uint16 g_div_cnt = 0;
-static volatile uint16 g_idxA = 0;
-static volatile uint16 g_idxB = 21;         /* 120 deg ahead of A */
-static volatile uint16 g_idxC = 42;         /* 240 deg ahead of A */
+static volatile uint8   g_running = 0;       /* set 1 by main to start spin, 0 on fault */
+static volatile float32 g_phase = 0.0f;      /* electrical angle, 0..64 LUT units */
 
 IFX_INTERRUPT(FOC_PWM_ISR, 0, 1);
 void FOC_PWM_ISR(void)
@@ -47,19 +58,14 @@ void FOC_PWM_ISR(void)
     if (!FOC_PWM_AckIrq()) return;
     if (!g_running) return;
 
-    if (++g_div_cnt >= PWM_ISR_DIV)
-    {
-        g_div_cnt = 0;
-        g_idxA = (g_idxA + 1) & 63;
-        g_idxB = (g_idxB + 1) & 63;
-        g_idxC = (g_idxC + 1) & 63;
+    g_phase += PHASE_INC;
+    if (g_phase >= 64.0f) g_phase -= 64.0f;
 
-        FOC_PWM_SetDutyPercent(
-            0.5f + DUTY_AMPLITUDE * sin_lut[g_idxA],
-            0.5f + DUTY_AMPLITUDE * sin_lut[g_idxB],
-            0.5f + DUTY_AMPLITUDE * sin_lut[g_idxC]
-        );
-    }
+    FOC_PWM_SetDutyPercent(
+        0.5f + DUTY_AMPLITUDE * sin_lut_interp(g_phase),
+        0.5f + DUTY_AMPLITUDE * sin_lut_interp(g_phase + OFF_B),
+        0.5f + DUTY_AMPLITUDE * sin_lut_interp(g_phase + OFF_C)
+    );
 }
 
 int core0_main(void)
