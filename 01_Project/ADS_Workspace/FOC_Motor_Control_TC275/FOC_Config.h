@@ -3,14 +3,24 @@
 
 #include "Ifx_Types.h"
 
-/*==================== PWM 引脚定义 (Port 2) ====================*/
-#define PIN_INH_A      &MODULE_P02, 0    /* PWM_2  */
-#define PIN_INL_A      &MODULE_P02, 1    /* PWM_3  */
-#define PIN_INH_B      &MODULE_P02, 3    /* PWM_5  */
-#define PIN_INL_B      &MODULE_P02, 4    /* PWM_6  */
-#define PIN_INH_C      &MODULE_P02, 5    /* PWM_7  */
-#define PIN_INL_C      &MODULE_P02, 6    /* PWM_8  */
-#define PIN_EN_GATE    &MODULE_P02, 6    /* PWM_8, 高电平使能 */
+/*==================== PWM 引脚定义 (CCU60, Port 2) ====================
+ * 实际硬件接线（2026-09-18 实测验证，电机已转）：
+ *   A 相高侧 INH_A = P02.0  (CCU60 CC60)
+ *   B 相高侧 INH_B = P02.7  (CCU60 CC61)
+ *   C 相高侧 INH_C = P02.4  (CCU60 CC62)
+ *   A 相低侧 INL_A = P02.1  (CCU60 COUT60) — 悬空（3xPWM 模式）
+ *   B 相低侧 INL_B = P02.3  (CCU60 COUT61) — 悬空（3xPWM 模式）
+ *   C 相低侧 INL_C = P02.5  (CCU60 COUT62) — 悬空（3xPWM 模式）
+ *   EN_GATE      = 硬件直连 3.3V，不占 GPIO
+ * DRV8305 已通过 SPI 配置为 3xPWM 模式（reg 0x07=0x2E6），INL 由芯片内部生成互补信号。
+ * 注意：这些宏仅作文档对照用；FOC_PWM.c 实际通过 iLLD 引脚表 IfxCcu60_CC6x_P02_x_OUT 路由。
+ */
+#define PIN_INH_A      &MODULE_P02, 0    /* CC60  */
+#define PIN_INL_A      &MODULE_P02, 1    /* COUT60（悬空） */
+#define PIN_INH_B      &MODULE_P02, 7    /* CC61  */
+#define PIN_INL_B      &MODULE_P02, 3    /* COUT61（悬空） */
+#define PIN_INH_C      &MODULE_P02, 4    /* CC62  */
+#define PIN_INL_C      &MODULE_P02, 5    /* COUT62（悬空） */
 
 /*==================== 故障反馈引脚 ====================*/
 #define PIN_NFAULT     &MODULE_P00, 3

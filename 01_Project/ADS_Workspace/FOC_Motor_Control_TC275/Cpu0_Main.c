@@ -8,7 +8,7 @@
 IfxCpu_syncEvent g_cpuSyncEvent = 0;
 
 #define PIN_LED1 &MODULE_P00, 5
-#define PIN_EN_GATE &MODULE_P02, 6
+/* EN_GATE is hard-wired to 3.3 V on the DRV8305 board; no GPIO needed. */
 #define PIN_NFAULT &MODULE_P00, 3
 
 static const float32 sin_lut[64] = {
