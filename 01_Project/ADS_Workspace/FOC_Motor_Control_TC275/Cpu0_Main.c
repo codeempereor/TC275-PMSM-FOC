@@ -23,7 +23,44 @@ static const float32 sin_lut[64] = {
 };
 
 #define DUTY_AMPLITUDE   0.20f
-#define LOOP_DELAY       300000
+
+/*
+ * PWM period ISR runs at 20kHz (same as PWM).
+ * We divide by PWM_ISR_DIV to get the sin LUT update rate.
+ *   update_rate = 20000 / PWM_ISR_DIV  Hz
+ *   elec freq   = update_rate / 64     Hz
+ *   rpm         = elec_freq * 60 / pole_pairs
+ * DIV=150 -> update 133Hz -> elec 2.08Hz -> ~18rpm (matches old busy-loop)
+ */
+#define PWM_ISR_DIV      150
+
+/* Volatile state shared between main loop and ISR */
+static volatile uint8  g_running = 0;       /* set 1 by main to start spin, 0 on fault */
+static volatile uint16 g_div_cnt = 0;
+static volatile uint16 g_idxA = 0;
+static volatile uint16 g_idxB = 21;         /* 120 deg ahead of A */
+static volatile uint16 g_idxC = 42;         /* 240 deg ahead of A */
+
+IFX_INTERRUPT(FOC_PWM_ISR, 0, 1);
+void FOC_PWM_ISR(void)
+{
+    if (!FOC_PWM_AckIrq()) return;
+    if (!g_running) return;
+
+    if (++g_div_cnt >= PWM_ISR_DIV)
+    {
+        g_div_cnt = 0;
+        g_idxA = (g_idxA + 1) & 63;
+        g_idxB = (g_idxB + 1) & 63;
+        g_idxC = (g_idxC + 1) & 63;
+
+        FOC_PWM_SetDutyPercent(
+            0.5f + DUTY_AMPLITUDE * sin_lut[g_idxA],
+            0.5f + DUTY_AMPLITUDE * sin_lut[g_idxB],
+            0.5f + DUTY_AMPLITUDE * sin_lut[g_idxC]
+        );
+    }
+}
 
 int core0_main(void)
 {
@@ -75,24 +112,17 @@ int core0_main(void)
 
     IfxPort_setPinLow(PIN_LED1);
 
-    uint16 idx = 0;
-    uint16 idxB = 21;
-    uint16 idxC = 42;
+    /* Start the open-loop spin from the ISR. Before this, g_running=0 so the
+     * ISR just acks and returns, PWM stays at 50% (symmetric, motor still). */
+    g_running = 1;
 
     while (1)
     {
-        if (IfxPort_getPinState(PIN_NFAULT) == 0) break;
-
-        FOC_PWM_SetDutyPercent(
-            0.5f + DUTY_AMPLITUDE * sin_lut[idx],
-            0.5f + DUTY_AMPLITUDE * sin_lut[idxB],
-            0.5f + DUTY_AMPLITUDE * sin_lut[idxC]
-        );
-        idx  = (idx  + 1) & 63;
-        idxB = (idxB + 1) & 63;
-        idxC = (idxC + 1) & 63;
-
-        for (volatile int j = 0; j < LOOP_DELAY; j++);
+        if (IfxPort_getPinState(PIN_NFAULT) == 0)
+        {
+            g_running = 0;
+            break;
+        }
     }
 
     /* fault: release motor, then blink LED to report fault source */

@@ -22,7 +22,7 @@ void FOC_PWM_Init(void)
     g_timerCfg.base.frequency = PWM_FREQ_HZ;
     g_timerCfg.base.countDir = IfxStdIf_Timer_CountDir_upAndDown; /* center aligned */
     g_timerCfg.base.startOffset = 0;
-    g_timerCfg.base.isrPriority = 0; /* no interrupt */
+    g_timerCfg.base.isrPriority = 1; /* T12 period interrupt -> CPU0, priority 1 (20kHz) */
     g_timerCfg.base.isrProvider = IfxSrc_Tos_cpu0;
     g_timerCfg.triggerOut = NULL_PTR;
 
@@ -98,4 +98,11 @@ void FOC_PWM_Enable(void)
 void FOC_PWM_Disable(void)
 {
     /* EN_GATE tied to 3.3V hardware, always enabled */
+}
+
+boolean FOC_PWM_AckIrq(void)
+{
+    /* Called at the top of the T12 period ISR; returns TRUE if a period match
+     * actually caused the interrupt, and clears the flag. */
+    return IfxCcu6_TimerWithTrigger_acknowledgeTimerIrq(&g_timer);
 }

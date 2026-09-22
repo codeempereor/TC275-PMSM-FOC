@@ -9,5 +9,6 @@ void FOC_PWM_SetDuty(uint16 dutyA, uint16 dutyB, uint16 dutyC);
 void FOC_PWM_SetDutyPercent(float32 dutyA, float32 dutyB, float32 dutyC); /* 0.0~1.0 */
 void FOC_PWM_Enable(void);
 void FOC_PWM_Disable(void);
+boolean FOC_PWM_AckIrq(void);  /* 在 PWM 周期 ISR 开头调用，清中断标志 */
 
 #endif
