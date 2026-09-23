@@ -1,0 +1,41 @@
+TC275 PMSM FOC 校准记录
+========================
+
+【零电流偏移校准】
+校准时间: 2026-09-23
+校准条件: 电机静止, PWM=50% 对称输出, 采样 1000 次平均
+
+Zero offset:
+  Phase A = 2050
+  Phase B = 2044
+  Phase C = 2040
+
+  Sum = 6134 (理论 3*2048=6144, 偏差 -10)
+
+【硬件引脚确认】
+  PWM:
+    INH_A = P02.0 (CC60)
+    INH_B = P02.7 (CC61)
+    INH_C = P02.4 (CC62)
+    INL 全悬空
+
+  电流采样 ADC (VADC Group 4):
+    ISEN_A = P40.9 (AN39) -> Ch7
+    ISEN_B = P40.8 (AN38) -> Ch6
+    ISEN_C = P40.7 (AN37) -> Ch5
+
+  串口调试 (ASCLIN0):
+    TX = P14.0
+    RX = P14.1
+    波特率 = 115200
+    板载 DAP VCOM = COM10
+
+【DRV8305 寄存器配置】
+  reg 0x07 = 0x2E6  (3xPWM 模式, 死区 3520ns)
+  reg 0x09 = 0x022  (清锁存故障)
+  reg 0x0C = 0x001F
+
+【当前固件参数】
+  DUTY_AMPLITUDE = 0.15
+  PWM 频率 = 20kHz
+  预估转速 ~18rpm

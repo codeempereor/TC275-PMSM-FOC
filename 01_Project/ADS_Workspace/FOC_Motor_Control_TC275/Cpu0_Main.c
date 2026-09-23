@@ -126,6 +126,25 @@ int core0_main(void)
     FOC_ADC_Init();
     FOC_UART_Print("ADC Ready\r\n");
 
+    /* Zero-current offset calibration: motor is still (g_running=0, PWM=50% symmetric).
+     * Read N samples of each phase, average them as the zero offset. */
+    FOC_UART_Print("Calibrating zero current offset...\r\n");
+    uint32 sumA = 0, sumB = 0, sumC = 0;
+    #define CALIB_SAMPLES 1000
+    for (uint32 i = 0; i < CALIB_SAMPLES; i++)
+    {
+        sumA += FOC_ADC_ReadRaw(7);
+        sumB += FOC_ADC_ReadRaw(6);
+        sumC += FOC_ADC_ReadRaw(5);
+    }
+    uint16 offA = sumA / CALIB_SAMPLES;
+    uint16 offB = sumB / CALIB_SAMPLES;
+    uint16 offC = sumC / CALIB_SAMPLES;
+    FOC_UART_Print("Zero offset: A="); FOC_UART_PrintInt(offA);
+    FOC_UART_Print(" B="); FOC_UART_PrintInt(offB);
+    FOC_UART_Print(" C="); FOC_UART_PrintInt(offC);
+    FOC_UART_Print("\r\n");
+
     /* Start the open-loop spin from the ISR. Before this, g_running=0 so the
      * ISR just acks and returns, PWM stays at 50% (symmetric, motor still). */
     g_running = 1;
