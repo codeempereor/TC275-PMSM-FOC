@@ -4,6 +4,7 @@
 #include "FOC_DRV8305.h"
 #include "FOC_PWM.h"
 #include "FOC_UART.h"
+#include "FOC_ADC.h"
 #include "IfxPort.h"
 
 IfxCpu_syncEvent g_cpuSyncEvent = 0;
@@ -122,6 +123,9 @@ int core0_main(void)
     FOC_UART_Init();
     FOC_UART_Print("\r\nFOC Motor Control Started\r\n");
 
+    FOC_ADC_Init();
+    FOC_UART_Print("ADC Ready\r\n");
+
     /* Start the open-loop spin from the ISR. Before this, g_running=0 so the
      * ISR just acks and returns, PWM stays at 50% (symmetric, motor still). */
     g_running = 1;
@@ -135,15 +139,21 @@ int core0_main(void)
             break;
         }
 
-        /* Print phase value every ~0.5s (main loop is fast, gate by counter) */
+        /* Print phase + ADC raw values every ~0.5s */
         tick++;
         if (tick >= 500000)
         {
             tick = 0;
-            FOC_UART_Print("Phase=");
-            FOC_UART_PrintFloat(g_phase, 2);
-            FOC_UART_Print("  Running=");
-            FOC_UART_PrintInt(g_running);
+            uint16 rawA = FOC_ADC_ReadRaw(9);
+            uint16 rawB = FOC_ADC_ReadRaw(8);
+            uint16 rawC = FOC_ADC_ReadRaw(7);
+            int32 sum = (int32)rawA + (int32)rawB + (int32)rawC;
+
+            FOC_UART_Print("A="); FOC_UART_PrintInt(rawA);
+            FOC_UART_Print(" B="); FOC_UART_PrintInt(rawB);
+            FOC_UART_Print(" C="); FOC_UART_PrintInt(rawC);
+            FOC_UART_Print(" Sum="); FOC_UART_PrintInt(sum);
+            FOC_UART_Print(" Ph="); FOC_UART_PrintFloat(g_phase, 2);
             FOC_UART_Print("\r\n");
         }
     }
