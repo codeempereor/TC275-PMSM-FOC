@@ -144,10 +144,10 @@ int core0_main(void)
         if (tick >= 500000)
         {
             tick = 0;
-            uint16 rawA = FOC_ADC_ReadRaw(9);
-            uint16 rawB = FOC_ADC_ReadRaw(8);
-            uint16 rawC = FOC_ADC_ReadRaw(7);
-            int32 sum = (int32)rawA + (int32)rawB + (int32)rawC;
+            uint16 rawA = FOC_ADC_ReadRaw(7);
+            uint16 rawB = FOC_ADC_ReadRaw(6);
+            uint16 rawC = FOC_ADC_ReadRaw(5);
+            sint32 sum = (sint32)rawA + (sint32)rawB + (sint32)rawC;
 
             FOC_UART_Print("A="); FOC_UART_PrintInt(rawA);
             FOC_UART_Print(" B="); FOC_UART_PrintInt(rawB);
@@ -194,3 +194,4 @@ int core0_main(void)
     while (1);
     return (1);
 }
+
