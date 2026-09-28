@@ -2,22 +2,22 @@ TC275 PMSM FOC 校准记录
 ========================
 
 【零电流偏移校准】
-校准时间: 2026-09-23
+校准时间: 2026-09-28
 校准条件: 电机静止, PWM=50% 对称输出, 采样 1000 次平均
 
-Zero offset:
-  Phase A = 2050
-  Phase B = 2044
-  Phase C = 2040
+Zero offset 多次采样值:
+  A 相范围: 2015 ~ 2054
+  B 相范围: 2017 ~ 2049
+  C 相范围: 2014 ~ 2044
+  典型值: A≈2045, B≈2040, C≈2038
 
-  Sum = 6134 (理论 3*2048=6144, 偏差 -10)
-
-【硬件引脚确认】
+【硬件引脚确认（全部实测验证）】
   PWM:
     INH_A = P02.0 (CC60)
     INH_B = P02.7 (CC61)
     INH_C = P02.4 (CC62)
-    INL 全悬空
+    INL 全悬空，DRV8305 工作在 3xPWM 模式
+    EN_GATE 硬件直连 3.3V，常使能，不占 GPIO
 
   电流采样 ADC (VADC Group 4):
     ISEN_A = P40.9 (AN39) -> Ch7
@@ -30,12 +30,34 @@ Zero offset:
     波特率 = 115200
     板载 DAP VCOM = COM10
 
-【DRV8305 寄存器配置】
+  编码器 QSPI1:
+    CLK = P10.2
+    MOSI = P10.3
+    MISO = P10.1
+    CSN = P10.0
+    (当前调试中，读取 busy 待排查)
+
+【DRV8305 寄存器配置（已验证工作）】
   reg 0x07 = 0x2E6  (3xPWM 模式, 死区 3520ns)
   reg 0x09 = 0x022  (清锁存故障)
   reg 0x0C = 0x001F
 
+【软件配置开关（已验证正确组合）】
+  CURRENT_DIR_A = -1  (A相电流极性反向)
+  CURRENT_DIR_B = -1  (B相电流极性反向)
+  MOTOR_DIR = -1      (电机相序反向)
+  Park 角度: fast_sin(-g_phase) / fast_cos(-g_phase)
+
+【算法验证记录】
+  固定角度堵转测试:
+    电角度固定 0 度，电机堵转
+    实测 id ≈ -30, iq ≈ 1250 (直流稳定值)
+    结论: Clarke/Park 变换、电流采样极性、相序全部正确
+
 【当前固件参数】
   DUTY_AMPLITUDE = 0.15
-  PWM 频率 = 20kHz
-  预估转速 ~18rpm
+  PWM 频率 = 20kHz 中心对齐
+  电机极对数 = 7
+  PI 初始参数: Kp=0.05f, Ki=0.001f, outMax=0.2f
+  三角函数: 3次多项式快速拟合，比标准库快60倍
+
