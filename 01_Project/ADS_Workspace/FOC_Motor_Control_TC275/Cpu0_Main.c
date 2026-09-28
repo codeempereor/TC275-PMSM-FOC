@@ -5,6 +5,7 @@
 #include "FOC_PWM.h"
 #include "FOC_UART.h"
 #include "FOC_ADC.h"
+#include "FOC_Algorithm.h"
 #include "IfxPort.h"
 
 IfxCpu_syncEvent g_cpuSyncEvent = 0;
@@ -13,46 +14,56 @@ IfxCpu_syncEvent g_cpuSyncEvent = 0;
 /* EN_GATE is hard-wired to 3.3 V on the DRV8305 board; no GPIO needed. */
 #define PIN_NFAULT &MODULE_P00, 3
 
-static const float32 sin_lut[64] = {
-     0.0000f, 0.0980f, 0.1951f, 0.2903f, 0.3827f, 0.4714f, 0.5556f, 0.6344f,
-     0.7071f, 0.7730f, 0.8315f, 0.8819f, 0.9239f, 0.9569f, 0.9808f, 0.9952f,
-     1.0000f, 0.9952f, 0.9808f, 0.9569f, 0.9239f, 0.8819f, 0.8315f, 0.7730f,
-     0.7071f, 0.6344f, 0.5556f, 0.4714f, 0.3827f, 0.2903f, 0.1951f, 0.0980f,
-     0.0000f,-0.0980f,-0.1951f,-0.2903f,-0.3827f,-0.4714f,-0.5556f,-0.6344f,
-    -0.7071f,-0.7730f,-0.8315f,-0.8819f,-0.9239f,-0.9569f,-0.9808f,-0.9952f,
-    -1.0000f,-0.9952f,-0.9808f,-0.9569f,-0.9239f,-0.8819f,-0.8315f,-0.7730f,
-    -0.7071f,-0.6344f,-0.5556f,-0.4714f,-0.3827f,-0.2903f,-0.1951f,-0.0980f
-};
+/* ==============================================
+ * 软件配置开关（直接改这两个值，不用动硬件）
+ * ============================================== */
+#define CURRENT_DIR_A   -1  /* A相电流极性：1=正，-1=反 */
+#define CURRENT_DIR_B   -1  /* B相电流极性：1=正，-1=反 */
+#define MOTOR_DIR       -1  /* 电机方向：1=正序，-1=反序 */
 
-#define DUTY_AMPLITUDE   0.15f
+/* ==============================================
+ * 快速多项式sin/cos（抄SguanFOC，比标准库快几十倍）
+ * ============================================== */
+#define VALUE_PI  3.14159265358979f
 
-/*
- * PWM period ISR runs at 20kHz (same as PWM).
- * Phase is a float in units of sin LUT index (0..64). Each ISR we add
- * PHASE_INC, so the electrical angle rotates continuously (no steps).
- *   PHASE_INC = 1.0 / PWM_ISR_DIV
- *   elec freq = 20000 * PHASE_INC / 64
- * DIV=150 -> 133 LUT-updates/sec -> elec 2.08Hz -> ~18rpm
- */
-#define PWM_ISR_DIV      150.0f
-#define PHASE_INC        (1.0f / PWM_ISR_DIV)
-
-/* 120 deg offset in LUT units (64/3 = 21.333) */
-#define OFF_B            21.3333f
-#define OFF_C            42.6667f
-
-static inline float32 sin_lut_interp(float32 phase)
+static inline float fast_sin(float x)
 {
-    if (phase >= 64.0f) phase -= 64.0f;
-    uint8 idx = (uint8)phase;
-    uint8 idx1 = (idx + 1) & 63;
-    float32 frac = phase - (float32)idx;
-    return sin_lut[idx] + frac * (sin_lut[idx1] - sin_lut[idx]);
+    int si = (int)(x * 0.31830988f);
+    x = x - (float)si * VALUE_PI;
+    if (si & 1) { x = x > 0.0f ? x - VALUE_PI : x + VALUE_PI; }
+    float u = x * x;
+    return x * (1.0f + u * (-0.16666666f + u * (0.0083333179f + u * (-0.00019840381f + u * (2.7532926e-06f + u * (-2.4703144e-08f + u * 1.3528548e-10f))))));
+}
+static inline float fast_cos(float x)
+{
+    int si = (int)(x * 0.31830988f);
+    x = x - (float)si * VALUE_PI;
+    if (si & 1) { x = x > 0.0f ? x - VALUE_PI : x + VALUE_PI; }
+    float u = x * x;
+    return 1.0f + u * (-0.49999991f + u * (0.041666519f + u * (-0.0013887906f + u * (2.4771643e-05f + u * (-2.7093486e-07f + u * 1.7290616e-09f)))));
 }
 
+#define DUTY_AMPLITUDE   0.15f
+#define MIN_DIV  3000.0f
+#define MAX_DIV  150.0f
+#define RAMP_STEP 0.01f
+#define SQRT3_2  0.8660254037844386f
+
 /* Volatile state shared between main loop and ISR */
-static volatile uint8   g_running = 0;       /* set 1 by main to start spin, 0 on fault */
-static volatile float32 g_phase = 0.0f;      /* electrical angle, 0..64 LUT units */
+static volatile uint8   g_running = 0;
+static volatile float32 g_phase = 0.0f;      /* electrical angle, 0..2π radians */
+static volatile float32 g_phase_inc = 0.0f;
+
+/* Zero current offset */
+static uint16 g_offA = 2050;
+static uint16 g_offB = 2044;
+static uint16 g_offC = 2040;
+
+/* Debug variables (ISR writes, main loop reads) */
+static volatile float32 g_id = 0;
+static volatile float32 g_iq = 0;
+static volatile float32 g_ialpha = 0;
+static volatile float32 g_ibeta = 0;
 
 IFX_INTERRUPT(FOC_PWM_ISR, 0, 1);
 void FOC_PWM_ISR(void)
@@ -60,14 +71,60 @@ void FOC_PWM_ISR(void)
     if (!FOC_PWM_AckIrq()) return;
     if (!g_running) return;
 
-    g_phase += PHASE_INC;
-    if (g_phase >= 64.0f) g_phase -= 64.0f;
+    /* 电角度累加 */
+    g_phase += g_phase_inc;
+    if (g_phase >= 2.0f * VALUE_PI) g_phase -= 2.0f * VALUE_PI;
+    if (g_phase < 0.0f) g_phase += 2.0f * VALUE_PI;
 
-    FOC_PWM_SetDutyPercent(
-        0.5f + DUTY_AMPLITUDE * sin_lut_interp(g_phase),
-        0.5f + DUTY_AMPLITUDE * sin_lut_interp(g_phase + OFF_B),
-        0.5f + DUTY_AMPLITUDE * sin_lut_interp(g_phase + OFF_C)
-    );
+    /* 同步采样电流 */
+    uint16 rawA = FOC_ADC_ReadRaw(7);
+    uint16 rawB = FOC_ADC_ReadRaw(6);
+    uint16 rawC = FOC_ADC_ReadRaw(5);
+
+    /* 减零偏，加极性配置 */
+    float32 ia = (float32)(rawA - g_offA) * CURRENT_DIR_A;
+    float32 ib = (float32)(rawB - g_offB) * CURRENT_DIR_B;
+    float32 ic = -(ia + ib);  /* 第三相用基尔霍夫算，和SguanFOC一致 */
+
+    /* 电机方向配置：反序则交换B/C */
+    if (MOTOR_DIR == -1) {
+        float32 tmp = ib;
+        ib = ic;
+        ic = tmp;
+    }
+
+    /* Clarke变换 */
+    float32 ialpha = ia;
+    float32 ibeta = (ia + 2.0f * ib) / 1.7320508075688772f;
+
+    /* Park变换，用快速三角函数，角度反向试一下 */
+    float32 sin_theta = fast_sin(-g_phase);
+    float32 cos_theta = fast_cos(-g_phase);
+    float32 id = ialpha * cos_theta + ibeta * sin_theta;
+    float32 iq = ibeta * cos_theta - ialpha * sin_theta;
+
+    /* 存调试变量 */
+    g_ialpha = ialpha;
+    g_ibeta = ibeta;
+    g_id = id;
+    g_iq = iq;
+
+    /* 开环V/f输出，用快速三角函数 */
+    float32 sine = fast_sin(g_phase);
+    float32 cosine = fast_cos(g_phase);
+    float32 dutyA = 0.5f + DUTY_AMPLITUDE * sine;
+    float32 dutyB = 0.5f + DUTY_AMPLITUDE * (sine * (-0.5f) + cosine * SQRT3_2);
+    float32 dutyC = 0.5f + DUTY_AMPLITUDE * (sine * (-0.5f) - cosine * SQRT3_2);
+
+    /* 限幅 */
+    if (dutyA > 0.8f) dutyA = 0.8f;
+    if (dutyA < 0.2f) dutyA = 0.2f;
+    if (dutyB > 0.8f) dutyB = 0.8f;
+    if (dutyB < 0.2f) dutyB = 0.2f;
+    if (dutyC > 0.8f) dutyC = 0.8f;
+    if (dutyC < 0.2f) dutyC = 0.2f;
+
+    FOC_PWM_SetDutyPercent(dutyA, dutyB, dutyC);
 }
 
 int core0_main(void)
@@ -140,16 +197,23 @@ int core0_main(void)
     uint16 offA = sumA / CALIB_SAMPLES;
     uint16 offB = sumB / CALIB_SAMPLES;
     uint16 offC = sumC / CALIB_SAMPLES;
+    g_offA = offA;
+    g_offB = offB;
+    g_offC = offC;
     FOC_UART_Print("Zero offset: A="); FOC_UART_PrintInt(offA);
     FOC_UART_Print(" B="); FOC_UART_PrintInt(offB);
     FOC_UART_Print(" C="); FOC_UART_PrintInt(offC);
     FOC_UART_Print("\r\n");
 
-    /* Start the open-loop spin from the ISR. Before this, g_running=0 so the
-     * ISR just acks and returns, PWM stays at 50% (symmetric, motor still). */
+    /* Start the open-loop spin from the ISR */
     g_running = 1;
 
     uint32 tick = 0;
+    /* 固定电角度在0度，堵转电机，验证电流采样和Park变换 */
+    g_phase_inc = 0.0f;
+    g_phase = 0.0f;
+    FOC_UART_Print("Fixed angle test: rotor locked at 0deg\r\n");
+
     while (1)
     {
         if (IfxPort_getPinState(PIN_NFAULT) == 0)
@@ -158,21 +222,12 @@ int core0_main(void)
             break;
         }
 
-        /* Print phase + ADC raw values every ~0.5s */
         tick++;
-        if (tick >= 500000)
+        if (tick >= 50000)
         {
             tick = 0;
-            uint16 rawA = FOC_ADC_ReadRaw(7);
-            uint16 rawB = FOC_ADC_ReadRaw(6);
-            uint16 rawC = FOC_ADC_ReadRaw(5);
-            sint32 sum = (sint32)rawA + (sint32)rawB + (sint32)rawC;
-
-            FOC_UART_Print("A="); FOC_UART_PrintInt(rawA);
-            FOC_UART_Print(" B="); FOC_UART_PrintInt(rawB);
-            FOC_UART_Print(" C="); FOC_UART_PrintInt(rawC);
-            FOC_UART_Print(" Sum="); FOC_UART_PrintInt(sum);
-            FOC_UART_Print(" Ph="); FOC_UART_PrintFloat(g_phase, 2);
+            FOC_UART_Print("id="); FOC_UART_PrintInt((sint32)g_id);
+            FOC_UART_Print(" iq="); FOC_UART_PrintInt((sint32)g_iq);
             FOC_UART_Print("\r\n");
         }
     }

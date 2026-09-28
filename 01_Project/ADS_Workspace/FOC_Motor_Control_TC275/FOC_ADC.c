@@ -8,10 +8,12 @@ static IfxVadc_Adc_Group   s_group4;
 static IfxVadc_Adc_Channel s_chA;
 static IfxVadc_Adc_Channel s_chB;
 static IfxVadc_Adc_Channel s_chC;
+static IfxVadc_Adc_Channel s_chPot;  /* potentiometer (knob) channel */
 
 void FOC_ADC_Init(void)
 {
     /* Configure ADC input pins as analog input (no pull device) */
+    IfxPort_setPinModeInput(&MODULE_P40, 0, IfxPort_InputMode_noPullDevice);  /* Potentiometer = P40.0 */
     IfxPort_setPinModeInput(&MODULE_P40, 7, IfxPort_InputMode_noPullDevice);  /* ISEN_C = P40.7 */
     IfxPort_setPinModeInput(&MODULE_P40, 8, IfxPort_InputMode_noPullDevice);  /* ISEN_B = P40.8 */
     IfxPort_setPinModeInput(&MODULE_P40, 9, IfxPort_InputMode_noPullDevice);  /* ISEN_A = P40.9 */
@@ -47,8 +49,13 @@ void FOC_ADC_Init(void)
     chCfg.resultRegister = IfxVadc_ChannelResult_5;
     IfxVadc_Adc_initChannel(&s_chC, &chCfg);
 
-    /* Add channels 5/6/7 to the scan request */
-    uint32 channelMask = (1 << 5) | (1 << 6) | (1 << 7);
+    /* Potentiometer: P40.0 = AN32 = Group4 Ch0 */
+    chCfg.channelId = IfxVadc_ChannelId_0;
+    chCfg.resultRegister = IfxVadc_ChannelResult_0;
+    IfxVadc_Adc_initChannel(&s_chPot, &chCfg);
+
+    /* Add channels 0/5/6/7 to the scan request */
+    uint32 channelMask = (1 << 0) | (1 << 5) | (1 << 6) | (1 << 7);
     IfxVadc_Adc_setScan(&s_group4, channelMask, channelMask);
 
     IfxVadc_Adc_startScan(&s_group4);
@@ -58,6 +65,7 @@ uint16 FOC_ADC_ReadRaw(uint8 ch)
 {
     IfxVadc_Adc_Channel *channel;
     switch (ch) {
+        case 0: channel = &s_chPot; break;
         case 7: channel = &s_chA; break;
         case 6: channel = &s_chB; break;
         case 5: channel = &s_chC; break;
