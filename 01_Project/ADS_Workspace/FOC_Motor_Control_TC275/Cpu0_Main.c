@@ -6,6 +6,7 @@
 #include "FOC_UART.h"
 #include "FOC_ADC.h"
 #include "FOC_Algorithm.h"
+#include "FOC_SPI.h"
 #include "IfxPort.h"
 
 IfxCpu_syncEvent g_cpuSyncEvent = 0;
@@ -205,30 +206,25 @@ int core0_main(void)
     FOC_UART_Print(" C="); FOC_UART_PrintInt(offC);
     FOC_UART_Print("\r\n");
 
-    /* Start the open-loop spin from the ISR */
-    g_running = 1;
+    /* 初始化AS5047P编码器，用现成的硬件QSPI1驱动 */
+    FOC_SPI_Init();
+    FOC_UART_Print("Encoder Ready\r\n");
+
+    /* 先不启动电机，PWM保持50%，打印编码器读数验证 */
+    g_running = 0;
+    FOC_PWM_SetDutyPercent(0.5f, 0.5f, 0.5f);
+    FOC_UART_Print("Turn motor by hand to verify encoder:\r\n");
 
     uint32 tick = 0;
-    /* 固定电角度在0度，堵转电机，验证电流采样和Park变换 */
-    g_phase_inc = 0.0f;
-    g_phase = 0.0f;
-    FOC_UART_Print("Fixed angle test: rotor locked at 0deg\r\n");
-
     while (1)
     {
-        if (IfxPort_getPinState(PIN_NFAULT) == 0)
-        {
-            g_running = 0;
-            break;
-        }
-
+        /* 调试阶段：每 500ms 打一次 AS5047P 原始帧 + EF/PARD/角度。
+         * 手转电机，angle 应在 0..16383 间单调变化；EF 必须恒为 0。 */
         tick++;
-        if (tick >= 50000)
+        if (tick >= 500000)
         {
             tick = 0;
-            FOC_UART_Print("id="); FOC_UART_PrintInt((sint32)g_id);
-            FOC_UART_Print(" iq="); FOC_UART_PrintInt((sint32)g_iq);
-            FOC_UART_Print("\r\n");
+            FOC_SPI_DumpDebug();
         }
     }
 

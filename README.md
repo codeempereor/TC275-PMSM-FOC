@@ -45,17 +45,18 @@
 - [x] 软件配置开关：`CURRENT_DIR_A/B`（电流极性 ±1）、`MOTOR_DIR`（相序 ±1）
 - [x] 固定角度堵转测试：id/iq 为直流（id≈-30, iq≈1250），算法 100% 正确
 
+#### 阶段 E：AS5047P 编码器接入 ✅
+- [x] QSPI1 硬件 SPI 驱动（SCLK=P10.2, MOSI=P10.3, MISO=P10.1, CSN=P10.0）
+- [x] AS5047P 命令帧偶校验（bit15 PARD）自动计算
+- [x] SPI Mode 1（CPOL=0, CPHA=1）显式配置
+- [x] QSPI1 TX/RX/Error 三中断（pri 4/5/6）清除 onTransfer 标志
+- [x] 手转电机验证：angle 0~16383 单调变化、回绕正确、EF 恒为 0
+
 ### 当前阶段 🚧
 
-**阶段 E：AS5047P 编码器调试**
-- 硬件 QSPI1 驱动已编写，当前卡在 SPI 读取 busy 状态，待排查接线/时序
+**阶段 F：电流环闭环**
 
 ## 下一步计划
-
-### 阶段 E：编码器接入
-- [ ] 解决 AS5047P QSPI 读取 busy 问题
-- [ ] 验证编码器角度线性（手转电机，角度跟随正确）
-- [ ] 编码器零位校准（上电对齐转子 N 极到 A 相轴线）
 
 ### 阶段 F：电流环闭环
 - [ ] 接入编码器实际电角度，替换开环累加角度
@@ -111,6 +112,8 @@ FOC_Motor_Control_TC275/          # 核心工程（01_Project/ADS_Workspace/）
 
 ## Git 提交历史
 
+- `26c9ef8` docs: 更新根 README
+- `<本次>` feat: AS5047P 编码器 QSPI 接入完成（偶校验+Mode1+三中断）
 - `f8bd338` docs: 更新文档至当前状态
 - `a4dd7f0` feat: 移植 SguanFOC 快速 sin/cos + 全 ISR 电流环，验证 Clarke/Park 正确
 - `b0edbca` docs: 对齐引脚文档

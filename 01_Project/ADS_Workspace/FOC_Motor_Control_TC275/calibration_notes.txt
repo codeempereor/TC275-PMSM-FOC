@@ -34,8 +34,34 @@ Zero offset 多次采样值:
     CLK = P10.2
     MOSI = P10.3
     MISO = P10.1
-    CSN = P10.0
-    (当前调试中，读取 busy 待排查)
+    CSN = P10.0 (SLSO10)
+    (2026-09-29 修复: 见下方 AS5047P 通信修复记录)
+
+【AS5047P 通信修复记录 (2026-09-29)】
+  原问题: 读角度一直 busy/读不到数
+  根因1: 命令帧漏算 bit15 偶校验 (PARD)。AS5047P 命令帧 bit15 必须对
+         bit14:0 做偶校验，校验失败会在返回帧 EF 位置 1 并拒绝读。
+         原代码发 0x7FFF，正确应为 0xFFFF (读 0x3FFF 时)。
+  根因2: SPI 模式未显式配置。AS5047P 是 Mode 1 (CPOL=0, CPHA=1)，
+         iLLD 默认是 Mode 0，采样沿错位。
+  根因3: chCfg.mode 误设为 IfxQspi_SpiMaster_Mode_long，但没调
+         packLongModeBuffer，BACON 配置错误。改回默认 short mode。
+  修复: FOC_SPI.c 重写
+    - as5047p_make_read_cmd() 自动计算偶校验
+    - 显式设置 clockPolarity=idleLow, shiftClock=TrailingEdge (Mode 1)
+    - dataWidth=16, MSB first, CS 低有效
+    - 删除 FOC_Encoder.c/.h (GPIO 模拟版, Mode3 假设错误, 死代码)
+    - 主循环每 500ms 调 FOC_SPI_DumpDebug() 打印 frame/EF/PARD/angle
+  根因4 (2026-09-29 二次修复): exchange 是异步的, onTransfer 标志靠 QSPI
+    TX/RX/Error 三个中断 ISR 清除。原来完全没配中断, 第一次 exchange 后
+    onTransfer 永远=1, 第二次 getStatus 死等 busy -> 主循环卡死, 串口停在
+    "Turn motor by hand..." 没有 ENC 输出。
+    修复: 在 FOC_SPI_Init 里配 QSPI1_TX=4/RX=5/ER=6 中断 (CPU0), 写三个
+    IFX_INTERRUPT 调 IfxQspi_SpiMaster_isrTransmit/Receive/Error。
+  验证标准:
+    - 手转电机, angle 应在 0..16383 间单调变化、回绕正确
+    - EF 必须恒为 0; 若 EF=1 说明命令帧仍有错
+    - 若 frame 恒为 0x0000/0xFFFF, 查硬件接线 (CS/SCLK/MOSI/MISO)
 
 【DRV8305 寄存器配置（已验证工作）】
   reg 0x07 = 0x2E6  (3xPWM 模式, 死区 3520ns)
