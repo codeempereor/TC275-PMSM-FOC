@@ -1,6 +1,6 @@
 # 基于英飞凌 TC275 的 PMSM 电机 FOC 矢量控制系统
 
-基于英飞凌 AURIX TC275TP 三核单片机，采用 AUTOSAR 分层架构，独立完成 PMSM 永磁同步电机 FOC 矢量控制系统从硬件接线到算法调试的全流程开发。
+基于英飞凌 AURIX TC275TP 三核单片机，独立完成 PMSM 永磁同步电机 FOC 矢量控制系统从硬件接线到算法调试的全流程开发。
 
 ## 硬件平台
 
@@ -17,97 +17,112 @@
 
 ### 已完成 ✅
 
+#### 阶段 A：基础验证
 - [x] 开发板 Blinky LED 验证（Memtool 烧录成功）
-- [x] 硬件引脚接线确认（见 [04_Docs/WIRING.md](04_Docs/WIRING.md)）
-- [x] CCU60 三相互补 PWM 初始化（20kHz 中心对齐，硬件死区 5µs）
+- [x] 硬件引脚接线确认（见 [01_Project/ADS_Workspace/FOC_Motor_Control_TC275/WIRING.md](01_Project/ADS_Workspace/FOC_Motor_Control_TC275/WIRING.md)）
+- [x] UART 串口打通（ASC0，TX=P14.0/RX=P14.1，115200，板载 DAP VCOM=COM10）
+- [x] CCU60 3相上桥 PWM 初始化（20kHz 中心对齐，3x 模式）
 - [x] DRV8305 GPIO 模拟 SPI 通信调通（TestSPI 读写一致，LED 常亮）
 - [x] DRV8305 配置为 3xPWM 模式（reg 0x07=0x2E6，死区 3520ns，实测避免 VDS 穿通）
 - [x] DRV8305 锁存故障清除（reg 0x09=0x022）
 - [x] nFAULT 实时监测 + LED 故障码解码（VDS/IC/VGS 三类）
-- [x] **开环正弦拖动电机旋转成功**（64 点 sin LUT，三相互差 120°，DUTY_AMPLITUDE=0.20）
-- [x] FOC 算法框架（Clarke/Park/SVPWM + PID，尚未接入主循环）
-- [x] VADC 电流采样代码框架（尚未接入主程序，未校准零电流）
-- [x] AS5047P 编码器 QSPI 驱动框架（尚未接入主程序）
+
+#### 阶段 B：开环 V/f 拖动
+- [x] 开环正弦拖动电机旋转成功（DUTY_AMPLITUDE=0.15f）
+- [x] 平滑正弦输出（多项式快速 sin/cos，替代 LUT 插值）
+- [x] 旋钮调速通道预留（P40.0）
+
+#### 阶段 C：电流采样
+- [x] VADC Group4 三相电流采样打通（P40.7/8/9，对应 AN37/38/39）
+- [x] 启动时 1000 次采样平均完成零电流偏移校准
+- [x] 典型零偏值：A≈2045, B≈2040, C≈2038（随温度略有波动）
+- [x] 采样与 PWM 中断完全同步（20kHz ISR 内读 ADC）
+
+#### 阶段 D：FOC 算法验证
+- [x] 移植 SguanFOC 快速多项式 sin/cos（比标准库快 60 倍，20kHz ISR 内可运行）
+- [x] Clarke/Park 变换实现并验证正确
+- [x] 全电流环计算移入 PWM ISR（采样+变换+输出完全同步）
+- [x] 软件配置开关：`CURRENT_DIR_A/B`（电流极性 ±1）、`MOTOR_DIR`（相序 ±1）
+- [x] 固定角度堵转测试：id/iq 为直流（id≈-30, iq≈1250），算法 100% 正确
 
 ### 当前阶段 🚧
 
-开环 V/f 拖动已转起来，下一步是把电流采样和编码器接进来，进入闭环 FOC。
+**阶段 E：AS5047P 编码器调试**
+- 硬件 QSPI1 驱动已编写，当前卡在 SPI 读取 busy 状态，待排查接线/时序
 
-## 开发计划
+## 下一步计划
 
-### 阶段 A：地基清理（进行中）
-- [x] 修正引脚文档与代码不一致（P02.0/7/4，EN_GATE 硬件直连）
-- [x] 删除死代码 PIN_EN_GATE 宏
-- [ ] 开环从空循环延时改到 CCU60 周期中断（10kHz），转速精确可控
+### 阶段 E：编码器接入
+- [ ] 解决 AS5047P QSPI 读取 busy 问题
+- [ ] 验证编码器角度线性（手转电机，角度跟随正确）
+- [ ] 编码器零位校准（上电对齐转子 N 极到 A 相轴线）
 
-### 阶段 B：电流采样打通
-- [ ] FOC_ADC_Init() 接入主程序
-- [ ] 校准零电流偏移（替换硬编码 2048）
-- [ ] ADC 改为 PWM 下半周期触发同步采样
-- [ ] 手转电机轴验证三相电流加法定理
+### 阶段 F：电流环闭环
+- [ ] 接入编码器实际电角度，替换开环累加角度
+- [ ] 接入 id/iq 双 PI 闭环
+- [ ] 调试 PI 参数，实现电流闭环响应
 
-### 阶段 C：编码器打通
-- [ ] FOC_SPI_Init() 接入主程序
-- [ ] 读 AS5047P ID/ERRFL 确认链路
-- [ ] 手转轴验证角度线性变化（0~16383）
-- [ ] 计算机械转速与电角度
+### 阶段 G：转速环闭环
+- [ ] 编码器速度计算
+- [ ] 外环转速 PI 控制
+- [ ] 旋钮调速功能接入
 
-### 阶段 D：闭环 FOC
-- [ ] 10kHz PWM 中断内跑 FOC：ADC→Clarke→Park→电流环 PI→反 Park→SVPWM
-- [ ] Id=0、Iq 开环台阶验证电流环收敛
-- [ ] 接入 AS5047P 角度替换开环斜坡
-- [ ] 加速度环外环（1kHz）
+## 关键参数
 
-### 阶段 E：多核分工
-- [ ] Core1 跑 10kHz 电流环 ISR
-- [ ] Core2 跑 1kHz 速度环 + 故障监控
-- [ ] Core0 跑调试通信
+| 参数 | 值 |
+|------|----|
+| PWM 频率 | 20kHz 中心对齐 |
+| 死区时间 | 3520ns（DRV8305 内部） |
+| 电机极对数 | 7 |
+| 编码器分辨率 | 14 位（16384） |
+| 开环电压幅值 | 0.15f（15% 占空比） |
+| 初始 PI 参数 | Kp=0.05f, Ki=0.001f, outMax=0.2f |
 
 ## 控制算法
 
 - **坐标变换**：Clarke 变换（3→2）、Park 变换（静止→旋转）、反 Park 变换
-- **SVPWM**：七段式空间矢量发波，电压矢量合成与扇区判断
-- **双闭环 PI**：电流环（d/q 轴解耦）+ 速度环
-- **PWM 输出**：CCU60 ATOM 三相互补 PWM，硬件死区 5µs + DRV8305 内部死区 3520ns
-- **电流采样**：VADC 同步采样三相电流
-- **角度获取**：QSPI 读取 AS5047P 编码器绝对角度
-
-## 多核调度
-
-| 核心 | 任务 | 频率 |
-|------|------|------|
-| Core0 | 主程序 + 开环测试 | 后台 |
-| Core1 | 电流环实时控制（规划） | 10kHz |
-| Core2 | 速度环与状态监控（规划） | 1kHz |
+- **三角函数**：3次多项式快速拟合（比标准库快60倍）
+- **双闭环 PI**：电流环（d/q 轴解耦），待调参
+- **PWM 输出**：CCU60 3路上桥 PWM，DRV8305 内部生成互补下桥
+- **电流采样**：VADC 同步采样三相电流，与PWM中断完全同步
+- **角度获取**：QSPI 读取 AS5047P 编码器绝对角度（调试中）
 
 ## 工具链
 
 - **编译**：Tasking TriCore + AURIX Development Studio (ADS)
-- **调试**：UDE Starterkit（在线调试、变量观测）
+- **调试**：UART 串口（115200，8N1）
 - **烧录**：Infineon Memtool 2021
-- **版本管理**：Git + GitHub
+- **版本管理**：Git + GitHub，SSH over 443 推送
 
 ## 目录结构
 
 ```
-01_Project/TC275_demo/          # 核心工程
-├── project/TC275/
-│   ├── _02_CDD/                # 复杂设备驱动（自研代码）
-│   │   ├── FOC_Config.h        # 引脚定义 + 电机参数
-│   │   ├── FOC_PWM.c/h         # GTM ATOM PWM 驱动
-│   │   ├── FOC_DRV8305.c/h     # DRV8305 GPIO SPI 驱动
-│   │   ├── FOC_SPI.c/h         # QSPI1 编码器驱动
-│   │   ├── FOC_ADC.c/h         # VADC 电流采样
-│   │   └── FOC_Algorithm.c/h   # FOC 算法 (Clarke/Park/SVPWM)
-│   ├── _03_MCAL/               # MCAL 驱动（EB tresos 生成）
-│   ├── _01_BSW/                # BSW 服务层
-│   └── _04_StartUp/            # 启动与主程序
-│       └── Cpu0_Main.c         # 主程序入口
-04_Docs/                        # 设计文档与学习资料
-├── WIRING.md                   # 完整接线表
-└── *.docx                      # 学习计划书与知识手册
+FOC_Motor_Control_TC275/          # 核心工程（01_Project/ADS_Workspace/）
+├── Cpu0_Main.c          # 主程序入口，ISR 电流环实现
+├── FOC_Config.h         # 引脚定义 + 电机参数配置
+├── FOC_PWM.c / .h       # CCU60 PWM 初始化 + 占空比设置
+├── FOC_DRV8305.c / .h   # DRV8305 GPIO 模拟 SPI 驱动
+├── FOC_SPI.c / .h       # QSPI1 硬件 SPI (AS5047P 编码器)
+├── FOC_ADC.c / .h       # VADC 三相电流采样
+├── FOC_Algorithm.c / .h # FOC 算法 (Clarke/Park/SVPWM/PID)
+├── calibration_notes.txt # 校准记录
+└── WIRING.md            # 详细接线表
 ```
+
+## Git 提交历史
+
+- `f8bd338` docs: 更新文档至当前状态
+- `a4dd7f0` feat: 移植 SguanFOC 快速 sin/cos + 全 ISR 电流环，验证 Clarke/Park 正确
+- `b0edbca` docs: 对齐引脚文档
+- `d8e03d2` feat: 开环 V/f 拖动（CCU60 20kHz 中断）
+- `2c0edd7` feat: 平滑开环（浮点相位累加 + LUT 插值）
+- `83009d2` tune: DUTY_AMPLITUDE 0.20 → 0.10
+- `fe57246` tune: DUTY_AMPLITUDE 0.10 → 0.15
+- `eb26d9b` feat: 新增 UART 调试输出
+- `611c722` feat: 阶段 B - VADC 接入主程序
+- `5b6dbd6` fix: UART 配置对齐官方例程 + ADC 扫描通道配置
+- `08dd013` feat: 启动时零电流偏移校准
 
 ## 技术栈
 
-`C` `AUTOSAR` `TC275` `FOC` `SVPWM` `PMSM` `GTM` `VADC` `QSPI` `DRV8305` `PI Control`
+`C` `TC275` `FOC` `SVPWM` `PMSM` `VADC` `QSPI` `DRV8305` `PI Control`
