@@ -8,6 +8,7 @@
 #include "FOC_Algorithm.h"
 #include "FOC_SPI.h"
 #include "IfxPort.h"
+#include "Bsp.h"
 
 IfxCpu_syncEvent g_cpuSyncEvent = 0;
 
