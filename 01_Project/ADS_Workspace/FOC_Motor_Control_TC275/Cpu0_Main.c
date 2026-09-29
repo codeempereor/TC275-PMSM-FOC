@@ -13,19 +13,12 @@
 IfxCpu_syncEvent g_cpuSyncEvent = 0;
 
 #define PIN_LED1 &MODULE_P00, 5
-/* EN_GATE is hard-wired to 3.3 V on the DRV8305 board; no GPIO needed. */
 #define PIN_NFAULT &MODULE_P00, 3
 
-/* ==============================================
- * 软件配置开关（直接改这两个值，不用动硬件）
- * ============================================== */
-#define CURRENT_DIR_A   -1  /* A相电流极性：1=正，-1=反 */
-#define CURRENT_DIR_B   -1  /* B相电流极性：1=正，-1=反 */
-#define MOTOR_DIR       -1  /* 电机方向：1=正序，-1=反序 */
+#define CURRENT_DIR_A   -1
+#define CURRENT_DIR_B   -1
+#define MOTOR_DIR       -1
 
-/* ==============================================
- * 快速多项式sin/cos（抄SguanFOC，比标准库快几十倍）
- * ============================================== */
 #define VALUE_PI  3.14159265358979f
 
 static inline float fast_sin(float x)
@@ -45,27 +38,19 @@ static inline float fast_cos(float x)
     return 1.0f + u * (-0.49999991f + u * (0.041666519f + u * (-0.0013887906f + u * (2.4771643e-05f + u * (-2.7093486e-07f + u * 1.7290616e-09f)))));
 }
 
-#define DUTY_AMPLITUDE   0.15f
-#define MIN_DIV  3000.0f
-#define MAX_DIV  150.0f
-#define RAMP_STEP 0.01f
-#define SQRT3_2  0.8660254037844386f
-
-/* Volatile state shared between main loop and ISR */
 static volatile uint8   g_running = 0;
-static volatile float32 g_phase = 0.0f;      /* electrical angle, 0..2π radians */
-static volatile float32 g_phase_inc = 0.0f;
+static volatile float32 g_elec_angle = 0.0f;
 
-/* Zero current offset */
+static PID_t g_pid_d;
+static PID_t g_pid_q;
+static volatile float32 g_id_ref = 0.0f;
+static volatile float32 g_iq_ref = 0.0f;
+
 static uint16 g_offA = 2050;
 static uint16 g_offB = 2044;
 static uint16 g_offC = 2040;
 
-/* Debug variables (ISR writes, main loop reads) */
-static volatile float32 g_id = 0;
-static volatile float32 g_iq = 0;
-static volatile float32 g_ialpha = 0;
-static volatile float32 g_ibeta = 0;
+static volatile float32 g_id = 0, g_iq = 0, g_vd = 0, g_vq = 0;
 
 IFX_INTERRUPT(FOC_PWM_ISR, 0, 1);
 void FOC_PWM_ISR(void)
@@ -73,58 +58,45 @@ void FOC_PWM_ISR(void)
     if (!FOC_PWM_AckIrq()) return;
     if (!g_running) return;
 
-    /* 电角度累加 */
-    g_phase += g_phase_inc;
-    if (g_phase >= 2.0f * VALUE_PI) g_phase -= 2.0f * VALUE_PI;
-    if (g_phase < 0.0f) g_phase += 2.0f * VALUE_PI;
-
-    /* 同步采样电流 */
     uint16 rawA = FOC_ADC_ReadRaw(7);
     uint16 rawB = FOC_ADC_ReadRaw(6);
     uint16 rawC = FOC_ADC_ReadRaw(5);
 
-    /* 减零偏，加极性配置 */
     float32 ia = (float32)(rawA - g_offA) * CURRENT_DIR_A;
     float32 ib = (float32)(rawB - g_offB) * CURRENT_DIR_B;
-    float32 ic = -(ia + ib);  /* 第三相用基尔霍夫算，和SguanFOC一致 */
+    float32 ic = -(ia + ib);
 
-    /* 电机方向配置：反序则交换B/C */
-    if (MOTOR_DIR == -1) {
-        float32 tmp = ib;
-        ib = ic;
-        ic = tmp;
-    }
+    if (MOTOR_DIR == -1) { float32 t = ib; ib = ic; ic = t; }
 
-    /* Clarke变换 */
     float32 ialpha = ia;
     float32 ibeta = (ia + 2.0f * ib) / 1.7320508075688772f;
 
-    /* Park变换，用快速三角函数，角度反向试一下 */
-    float32 sin_theta = fast_sin(-g_phase);
-    float32 cos_theta = fast_cos(-g_phase);
-    float32 id = ialpha * cos_theta + ibeta * sin_theta;
-    float32 iq = ibeta * cos_theta - ialpha * sin_theta;
+    float32 sin_e = fast_sin(g_elec_angle);
+    float32 cos_e = fast_cos(g_elec_angle);
+    float32 id  =  ialpha * cos_e + ibeta * sin_e;
+    float32 iq  = -ialpha * sin_e + ibeta * cos_e;
 
-    /* 存调试变量 */
-    g_ialpha = ialpha;
-    g_ibeta = ibeta;
     g_id = id;
     g_iq = iq;
 
-    /* 开环V/f输出，用快速三角函数 */
-    float32 sine = fast_sin(g_phase);
-    float32 cosine = fast_cos(g_phase);
-    float32 dutyA = 0.5f + DUTY_AMPLITUDE * sine;
-    float32 dutyB = 0.5f + DUTY_AMPLITUDE * (sine * (-0.5f) + cosine * SQRT3_2);
-    float32 dutyC = 0.5f + DUTY_AMPLITUDE * (sine * (-0.5f) - cosine * SQRT3_2);
+    float32 vd = PID_Calc(&g_pid_d, g_id_ref, id);
+    float32 vq = PID_Calc(&g_pid_q, g_iq_ref, iq);
+    g_vd = vd;
+    g_vq = vq;
 
-    /* 限幅 */
-    if (dutyA > 0.8f) dutyA = 0.8f;
-    if (dutyA < 0.2f) dutyA = 0.2f;
-    if (dutyB > 0.8f) dutyB = 0.8f;
-    if (dutyB < 0.2f) dutyB = 0.2f;
-    if (dutyC > 0.8f) dutyC = 0.8f;
-    if (dutyC < 0.2f) dutyC = 0.2f;
+    float32 valpha = vd * cos_e - vq * sin_e;
+    float32 vbeta  = vd * sin_e + vq * cos_e;
+
+    float32 dutyA, dutyB, dutyC;
+    FOC_SVPWM(valpha, vbeta, &dutyA, &dutyB, &dutyC);
+
+    dutyA = 0.5f + (dutyA - 0.5f) * 0.3f;
+    dutyB = 0.5f + (dutyB - 0.5f) * 0.3f;
+    dutyC = 0.5f + (dutyC - 0.5f) * 0.3f;
+
+    if (dutyA > 0.8f) dutyA = 0.8f; if (dutyA < 0.2f) dutyA = 0.2f;
+    if (dutyB > 0.8f) dutyB = 0.8f; if (dutyB < 0.2f) dutyB = 0.2f;
+    if (dutyC > 0.8f) dutyC = 0.8f; if (dutyC < 0.2f) dutyC = 0.2f;
 
     FOC_PWM_SetDutyPercent(dutyA, dutyB, dutyC);
 }
@@ -142,34 +114,11 @@ int core0_main(void)
     IfxPort_setPinModeInput(PIN_NFAULT, IfxPort_InputMode_pullUp);
 
     DRV8305_Init();
-
-    /*
-     * SPI self-test: writes reg 0x07 = 0x090 then reads it back.
-     *   LED solid ON  -> SPI link OK (registers actually reach DRV8305)
-     *   LED blinks 5x -> SPI link FAIL (check SCLK/SDI/SCS/SDO wiring)
-     * After this, we reprogram 0x07 to the real 3xPWM value below.
-     */
     DRV8305_TestSPI();
-
-    /*
-     * Gate Drive Control (reg 0x07):
-     *   bit 9   = 1   COMM_OPTION (default, active freewheel)
-     *   bit 8:7 = 01  PWM_MODE = 3 independent inputs
-     *                (INLx ignored; DRV8305 generates complementary low-side)
-     *   bit 6:4 = 110 DEAD_TIME = 3520 ns (was 100=880ns, too small -> VDS shoot-through)
-     *   bit 3:2 = 01  TBLANK (default)
-     *   bit 1:0 = 10  TVDS (default)
-     *   => 0x2E6
-     */
     DRV8305_WriteReg(0x07, 0x2E6);
     DRV8305_WriteReg(0x0C, 0x001F);
-
-    /* Clear latched fault bits from power-up sequencing (CLR_FLTS=1, self-clearing).
-     * 0x09 default = 0x020 (WD_DLY=01); set bit1 to clear faults. */
     DRV8305_WriteReg(0x09, 0x022);
     for (volatile int j = 0; j < 100000; j++);
-
-    /* EN_GATE is hard-wired to 3.3 V on the DRV8305 board; no GPIO needed. */
     for (volatile int j = 0; j < 2000000; j++);
 
     FOC_PWM_Init();
@@ -185,8 +134,6 @@ int core0_main(void)
     FOC_ADC_Init();
     FOC_UART_Print("ADC Ready\r\n");
 
-    /* Zero-current offset calibration: motor is still (g_running=0, PWM=50% symmetric).
-     * Read N samples of each phase, average them as the zero offset. */
     FOC_UART_Print("Calibrating zero current offset...\r\n");
     uint32 sumA = 0, sumB = 0, sumC = 0;
     #define CALIB_SAMPLES 1000
@@ -196,73 +143,63 @@ int core0_main(void)
         sumB += FOC_ADC_ReadRaw(6);
         sumC += FOC_ADC_ReadRaw(5);
     }
-    uint16 offA = sumA / CALIB_SAMPLES;
-    uint16 offB = sumB / CALIB_SAMPLES;
-    uint16 offC = sumC / CALIB_SAMPLES;
-    g_offA = offA;
-    g_offB = offB;
-    g_offC = offC;
-    FOC_UART_Print("Zero offset: A="); FOC_UART_PrintInt(offA);
-    FOC_UART_Print(" B="); FOC_UART_PrintInt(offB);
-    FOC_UART_Print(" C="); FOC_UART_PrintInt(offC);
+    g_offA = sumA / CALIB_SAMPLES;
+    g_offB = sumB / CALIB_SAMPLES;
+    g_offC = sumC / CALIB_SAMPLES;
+    FOC_UART_Print("Zero offset: A="); FOC_UART_PrintInt(g_offA);
+    FOC_UART_Print(" B="); FOC_UART_PrintInt(g_offB);
+    FOC_UART_Print(" C="); FOC_UART_PrintInt(g_offC);
     FOC_UART_Print("\r\n");
 
-    /* 初始化AS5047P编码器，用现成的硬件QSPI1驱动 */
     FOC_SPI_Init();
     FOC_UART_Print("Encoder Ready\r\n");
 
-    /* 先不启动电机，PWM保持50%，打印编码器读数验证 */
     g_running = 0;
-    FOC_PWM_SetDutyPercent(0.5f, 0.5f, 0.5f);
-    FOC_UART_Print("Turn motor by hand to verify encoder:\r\n");
+    FOC_UART_Print("Aligning encoder zero...\r\n");
+    FOC_PWM_SetDutyPercent(0.65f, 0.425f, 0.425f);
+    for (volatile int j = 0; j < 5000000; j++);
 
-    uint32 tick = 0;
+    uint32 sum_enc = 0;
+    #define ENC_CALIB_N 100
+    for (uint32 i = 0; i < ENC_CALIB_N; i++)
+        sum_enc += FOC_SPI_GetAngleRaw();
+    uint16 zero_offset = (uint16)(sum_enc / ENC_CALIB_N);
+
+    FOC_PWM_SetDutyPercent(0.5f, 0.5f, 0.5f);
+    for (volatile int j = 0; j < 500000; j++);
+
+    FOC_UART_Print("Zero offset = ");
+    FOC_UART_PrintInt((sint32)zero_offset);
+    FOC_UART_Print(" (using ENCODER_ZERO_OFFSET=8726)\r\n");
+
+    PID_Init(&g_pid_d, 0.0001f, 0.0f, 0.0f, 0.3f);
+    PID_Init(&g_pid_q, 0.0001f, 0.0f, 0.0f, 0.3f);
+    g_id_ref = 0.0f;
+    g_iq_ref = 0.0f;
+
+    FOC_UART_Print("Current loop starting. iq_ref=0\r\n");
+    for (volatile int j = 0; j < 5000000; j++);
+    g_running = 1;
+
+    uint32 print_cnt = 0;
     while (1)
     {
-        /* 调试阶段：每 500ms 打一次 AS5047P 原始帧 + EF/PARD/角度。
-         * 手转电机，angle 应在 0..16383 间单调变化；EF 必须恒为 0。 */
-        tick++;
-        if (tick >= 500000)
+        uint16 enc_raw = FOC_SPI_GetAngleRaw();
+        sint32 mech = (sint32)enc_raw - (sint32)ENCODER_ZERO_OFFSET;
+        if (mech < 0) mech += 16384;
+        g_elec_angle = (float32)mech * TWO_PI / 16384.0f * (float32)MOTOR_POLE_PAIRS;
+        while (g_elec_angle >= TWO_PI) g_elec_angle -= TWO_PI;
+
+        print_cnt++;
+        if (print_cnt >= 200)
         {
-            tick = 0;
-            FOC_SPI_DumpDebug();
+            print_cnt = 0;
+            FOC_UART_Print("id="); FOC_UART_PrintInt((sint32)g_id);
+            FOC_UART_Print(" iq="); FOC_UART_PrintInt((sint32)g_iq);
+            FOC_UART_Print(" vd="); FOC_UART_PrintInt((sint32)g_vd);
+            FOC_UART_Print(" vq="); FOC_UART_PrintInt((sint32)g_vq);
+            FOC_UART_Print("\r\n");
         }
+        for (volatile int j = 0; j < 5000; j++);
     }
-
-    /* fault: release motor, then blink LED to report fault source */
-    FOC_PWM_SetDutyPercent(0.5f, 0.5f, 0.5f);
-
-    uint16 vds_fault = DRV8305_ReadReg(0x02);   /* VDS overcurrent faults */
-    uint16 ic_fault  = DRV8305_ReadReg(0x03);   /* IC faults (UVLO/OTSD/etc) */
-    uint16 vgs_fault = DRV8305_ReadReg(0x04);   /* VGS gate drive faults */
-
-    int blink_count = 4;                          /* default: unknown fault */
-
-    if (vds_fault != 0)
-        blink_count = 2;                          /* VDS overcurrent (shoot-through) */
-    else if (ic_fault != 0)
-    {
-        /* decode which IC fault bit is set */
-        if      (ic_fault & (1 << 10)) blink_count = 1;   /* PVDD_UVLO2 */
-        else if (ic_fault & (1 << 9))  blink_count = 2;   /* WD_FAULT */
-        else if (ic_fault & (1 << 8))  blink_count = 3;   /* OTSD */
-        else if (ic_fault & (1 << 6))  blink_count = 4;   /* VREG_UV */
-        else if (ic_fault & (1 << 5))  blink_count = 5;   /* AVDD_UVLO */
-        else if (ic_fault & (1 << 4))  blink_count = 6;   /* VCP_LSD_UVLO2 */
-        else if (ic_fault & (1 << 2))  blink_count = 7;   /* VCPH_UVLO2 */
-        else                           blink_count = 8;   /* other IC fault */
-    }
-    else if (vgs_fault != 0)
-        blink_count = 9;                          /* VGS gate drive fault */
-
-    for (int i = 0; i < blink_count; i++)
-    {
-        IfxPort_setPinLow(PIN_LED1);
-        for (volatile int j = 0; j < 5000000; j++);
-        IfxPort_setPinHigh(PIN_LED1);
-        for (volatile int j = 0; j < 5000000; j++);
-    }
-    while (1);
-    return (1);
 }
-
