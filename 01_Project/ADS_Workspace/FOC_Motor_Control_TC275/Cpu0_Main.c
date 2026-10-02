@@ -316,11 +316,13 @@ int core0_main(void)
         if (++pot_cnt >= 100)
         {
             pot_cnt = 0;
+            FOC_ADC_TriggerPot();
             g_pot_raw = FOC_ADC_ReadRaw(0);
             float32 target = (g_pot_raw < 40) ? 0.0f
                             : -(float32)(g_pot_raw - 40) / 4055.0f * 12.0f;  /* 死区40码后线性升到 -12 */
             g_speed_ref_filt = g_speed_ref_filt * 0.9f + target * 0.1f;       /* 一阶低通防跳变 */
             g_speed_ref = g_speed_ref_filt;
+            if (fabsf(g_speed_ref) < 0.5f) speed_integral = 0.0f;  /* 停转位清积分：防堵转积分死锁，旋钮回零必须能停 */
         }
 
         if (speed_updated && g_foc_mode == 2 && g_dir_chk == 2)

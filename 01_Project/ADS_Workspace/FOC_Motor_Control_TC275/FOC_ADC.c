@@ -23,12 +23,14 @@ void FOC_ADC_Init(void)
     IfxVadc_Adc_initModuleConfig(&modCfg, &MODULE_VADC);
     IfxVadc_Adc_initModule(&s_vadc, &modCfg);
 
-    /* --- Group0：电位器旋钮 AN0 = G0CH0，后台自动连续扫描 --- */
+    /* --- Group0：电位器旋钮 AN0 = G0CH0，单次扫描 + 主循环按需软件触发 ---
+     * 不用后台扫描/自动扫描：结果走 GLOBRES 或持续占用仲裁，都会干扰/复杂化；
+     * 电位器是慢变量，主循环每 100 次才读一次，触发一次扫描仅 ~1us，对 Group4 电流采样无影响。 */
     IfxVadc_Adc_GroupConfig grpCfg0;
     IfxVadc_Adc_initGroupConfig(&grpCfg0, &s_vadc);
     grpCfg0.groupId = IfxVadc_GroupId_0;
     grpCfg0.master = IfxVadc_GroupId_0;
-    grpCfg0.scanRequest.autoscanEnabled = TRUE;   /* 旋钮是慢变量，自动扫描持续刷新结果寄存器 */
+    grpCfg0.scanRequest.autoscanEnabled = FALSE;   /* 单次扫描 */
     grpCfg0.scanRequest.triggerConfig.gatingMode = IfxVadc_GatingMode_always;
     grpCfg0.arbiter.requestSlotScanEnabled = TRUE;
     IfxVadc_Adc_initGroup(&s_group0, &grpCfg0);
@@ -80,6 +82,12 @@ void FOC_ADC_Init(void)
 void FOC_ADC_StartSync(void)
 {
     IfxVadc_Adc_startScan(&s_group4);
+}
+
+/* 主循环读电位器前调用：软件触发一次 Group0 扫描（~1us，不影响 Group4 仲裁） */
+void FOC_ADC_TriggerPot(void)
+{
+    IfxVadc_Adc_startScan(&s_group0);
 }
 
 uint16 FOC_ADC_ReadRaw(uint8 ch)
