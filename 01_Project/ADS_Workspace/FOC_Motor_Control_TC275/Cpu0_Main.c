@@ -77,6 +77,21 @@ static volatile uint8 g_dir_chk = 0;              /* 磁极方向确认：0=未�
 static sint32 dir_accum = 0;
 static volatile uint32 dir_t_start = 0;
 
+/* 堵转脱困（方案A：电压开环冲击 kick） */
+static volatile uint8  g_kick = 0;             /* 1=冲击中 */
+static uint16 g_kick_cnt = 0;                  /* 冲击剩余窗数(5ms) */
+static uint16 g_stall_cnt = 0;                 /* 堵转连续窗计数 */
+static uint8  g_kick_fail = 0;                 /* 连续冲击失败次数 */
+static volatile float32 s_duty_hi = 0.45f;     /* 动态 duty 上限，kick 时放宽到 0.9 */
+#define STALL_SPD_LIM  0.5f    /* 堵转判定：|spd|<0.5 rad/s */
+#define STALL_SREF_MIN 2.0f    /* 堵转判定：|sref|>2 rad/s 才判（回零不算堵） */
+#define STALL_IQ_SAT   140.0f  /* 堵转判定：速度环输出饱和 */
+#define STALL_WINDOWS  40      /* 持续 200ms 判堵转 */
+#define KICK_WINDOWS   20      /* 冲击 100ms */
+#define KICK_VOLTAGE   0.9f    /* 冲击电压幅度（duty 上限 0.9 → 相电压约翻倍） */
+#define KICK_SPD_EXIT  2.0f    /* 冲击成功判定：spd>2 rad/s */
+#define KICK_FAIL_MAX  3       /* 连续失败 3 次停止冲击，防持续大电流 */
+
 static volatile uint8  g_foc_mode = 0;   /* 0=预定位 1=开环加速 2=闭环 */
 static volatile float32 g_theta_i = 0.0f;
 static volatile float32 g_omega_i = 0.0f;
@@ -156,20 +171,33 @@ void FOC_PWM_ISR(void)
     g_id = id;
     g_iq = iq;
 
-    float32 vd = PID_Calc(&g_pid_d, g_id_ref, id);
-    float32 vq = PID_Calc(&g_pid_q, g_iq_ref, iq);
-    g_vd = vd;
-    g_vq = vq;
-
-    float32 valpha = vd * cos_e - vq * sin_e;
-    float32 vbeta  = vd * sin_e + vq * cos_e;
+    float32 vd, vq, valpha, vbeta;
+    if (g_kick)
+    {
+        /* 堵转脱困：电压开环冲击（不闭环，采样失效无碍），方向跟随 sref */
+        vd = 0.0f;
+        vq = (g_speed_ref < 0.0f) ? -KICK_VOLTAGE : KICK_VOLTAGE;
+        valpha = vd * cos_e - vq * sin_e;
+        vbeta  = vd * sin_e + vq * cos_e;
+        g_vd = vd;
+        g_vq = vq;
+    }
+    else
+    {
+        vd = PID_Calc(&g_pid_d, g_id_ref, id);
+        vq = PID_Calc(&g_pid_q, g_iq_ref, iq);
+        valpha = vd * cos_e - vq * sin_e;
+        vbeta  = vd * sin_e + vq * cos_e;
+        g_vd = vd;
+        g_vq = vq;
+    }
 
     float32 dutyA, dutyB, dutyC;
     FOC_SVPWM(valpha, vbeta, &dutyA, &dutyB, &dutyC);
 
-    if (dutyA > 0.45f) dutyA = 0.45f; if (dutyA < 0.05f) dutyA = 0.05f;
-    if (dutyB > 0.45f) dutyB = 0.45f; if (dutyB < 0.05f) dutyB = 0.05f;
-    if (dutyC > 0.45f) dutyC = 0.45f; if (dutyC < 0.05f) dutyC = 0.05f;
+    if (dutyA > s_duty_hi) dutyA = s_duty_hi; if (dutyA < 0.05f) dutyA = 0.05f;
+    if (dutyB > s_duty_hi) dutyB = s_duty_hi; if (dutyB < 0.05f) dutyB = 0.05f;
+    if (dutyC > s_duty_hi) dutyC = s_duty_hi; if (dutyC < 0.05f) dutyC = 0.05f;
 
     s_dA = dutyA; s_dB = dutyB; s_dC = dutyC;
 
@@ -322,33 +350,72 @@ int core0_main(void)
                             : -(float32)(g_pot_raw - 40) / 4055.0f * 12.0f;  /* 死区40码后线性升到 -12 */
             g_speed_ref_filt = g_speed_ref_filt * 0.9f + target * 0.1f;       /* 一阶低通防跳变 */
             g_speed_ref = g_speed_ref_filt;
-            if (fabsf(g_speed_ref) < 0.5f) speed_integral = 0.0f;  /* 停转位清积分：防堵转积分死锁，旋钮回零必须能停 */
+            if (fabsf(g_speed_ref) < 0.5f) { speed_integral = 0.0f; g_kick_fail = 0; }  /* 停转位清积分/失败计数：旋钮回零必须能停 */
         }
 
         if (speed_updated && g_foc_mode == 2 && g_dir_chk == 2)
         {
-            if (g_speed_meas * g_speed_ref < -30.0f && fabsf(g_speed_meas) > 3.0f)
+            if (g_kick)
             {
-                g_mech += (sint32)ENCODER_RESOLUTION / MOTOR_POLE_PAIRS / 2;  /* 磁极反 → 翻 π */
+                /* 冲击进行中：每 5ms 检查一次，转起来/超时/旋钮回零即退出 */
                 speed_integral = 0.0f;
-                g_iq_ref = -50.0f;
+                if (--g_kick_cnt == 0)
+                {
+                    g_kick = 0;
+                    s_duty_hi = 0.45f;
+                    if (++g_kick_fail >= KICK_FAIL_MAX) g_kick_fail = KICK_FAIL_MAX;  /* 记失败 */
+                }
+                else if (fabsf(g_speed_meas) > KICK_SPD_EXIT || fabsf(g_speed_ref) < 1.0f)
+                {
+                    g_kick = 0;
+                    s_duty_hi = 0.45f;
+                    g_kick_fail = 0;   /* 冲击成功/旋钮回零：失败计数清零 */
+                }
                 speed_updated = 0;
-                continue;
             }
-            float32 err_speed = g_speed_ref - g_speed_meas;
-            sint32 windup = (err_speed > 0.0f && g_iq_ref >= 149.0f) ||
-                           (err_speed < 0.0f && g_iq_ref <= -149.0f);
-            if (!windup) speed_integral += err_speed;
-            if (speed_integral > 3000.0f) speed_integral = 3000.0f;
-            if (speed_integral < -3000.0f) speed_integral = -3000.0f;
-            float32 new_iq = 0.5f * err_speed + 0.05f * speed_integral;
-            float32 dq = new_iq - g_iq_ref;
-            if (dq > 6.0f) dq = 6.0f;
-            if (dq < -6.0f) dq = -6.0f;
-            g_iq_ref += dq;
-            if (g_iq_ref > 150.0f) g_iq_ref = 150.0f;
-            if (g_iq_ref < -150.0f) g_iq_ref = -150.0f;
-            speed_updated = 0;
+            else
+            {
+                if (g_speed_meas * g_speed_ref < -30.0f && fabsf(g_speed_meas) > 3.0f)
+                {
+                    g_mech += (sint32)ENCODER_RESOLUTION / MOTOR_POLE_PAIRS / 2;  /* 磁极反 → 翻 π */
+                    speed_integral = 0.0f;
+                    g_iq_ref = -50.0f;
+                    speed_updated = 0;
+                    continue;
+                }
+                float32 err_speed = g_speed_ref - g_speed_meas;
+                sint32 windup = (err_speed > 0.0f && g_iq_ref >= 149.0f) ||
+                               (err_speed < 0.0f && g_iq_ref <= -149.0f);
+                if (!windup) speed_integral += err_speed;
+                if (speed_integral > 3000.0f) speed_integral = 3000.0f;
+                if (speed_integral < -3000.0f) speed_integral = -3000.0f;
+                float32 new_iq = 0.5f * err_speed + 0.05f * speed_integral;
+                float32 dq = new_iq - g_iq_ref;
+                if (dq > 6.0f) dq = 6.0f;
+                if (dq < -6.0f) dq = -6.0f;
+                g_iq_ref += dq;
+                if (g_iq_ref > 150.0f) g_iq_ref = 150.0f;
+                if (g_iq_ref < -150.0f) g_iq_ref = -150.0f;
+
+                /* 堵转检测：spd≈0 且 有给定 且 速度环已饱和 → 持续 200ms 触发冲击脱困 */
+                if (fabsf(g_speed_meas) < STALL_SPD_LIM && fabsf(g_speed_ref) > STALL_SREF_MIN
+                    && fabsf(g_iq_ref) > STALL_IQ_SAT && g_kick_fail < KICK_FAIL_MAX)
+                {
+                    if (++g_stall_cnt >= STALL_WINDOWS)
+                    {
+                        g_stall_cnt = 0;
+                        g_kick = 1;
+                        g_kick_cnt = KICK_WINDOWS;
+                        s_duty_hi = 0.9f;
+                        speed_integral = 0.0f;
+                    }
+                }
+                else
+                {
+                    g_stall_cnt = 0;
+                }
+                speed_updated = 0;
+            }
         }
 
         if (g_sw_dbg)
@@ -375,6 +442,7 @@ int core0_main(void)
             FOC_UART_Print(" iqr="); FOC_UART_PrintInt((sint32)g_iq_ref);
             FOC_UART_Print(" sref="); FOC_UART_PrintInt((sint32)(g_speed_ref * 100.0f));
             FOC_UART_Print(" pot="); FOC_UART_PrintInt((sint32)g_pot_raw);
+            FOC_UART_Print(" k="); FOC_UART_PrintInt((sint32)g_kick);
             FOC_UART_Print("\r\n");
         }
     }
