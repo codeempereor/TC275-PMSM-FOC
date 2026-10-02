@@ -85,7 +85,7 @@ Zero offset 多次采样值:
     CURRENT_DIR_A/B/C = +1, MOTOR_DIR = +1
     Park 角度取反: sin_e = -sinf(g_elec_angle), cos_e = cosf(g_elec_angle)
     极对数 = 10, 固定采样 A/B, duty 限幅 [0.05, 0.45]
-    iq_ref = +50 (顺时针) / -50 (逆时针)
+    iq_ref = -50 (顺时针, 实测确认) / +50 (逆时针)
   实测现象:
     复位后电流环启动: 电机滋滋响, 转子静止 (启动死区, 静止力矩不足以克服静摩擦)
     手动拨一下转子 -> 持续顺时针转动 (ang 持续单向单调变化)
