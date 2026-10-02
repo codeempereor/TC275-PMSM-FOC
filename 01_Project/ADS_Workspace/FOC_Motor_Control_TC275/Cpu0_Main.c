@@ -59,6 +59,16 @@ static volatile float32 g_id = 0, g_iq = 0, g_vd = 0, g_vq = 0;
 static volatile uint16 g_rawA = 0, g_rawB = 0;
 static float32 s_dA = 0.25f, s_dB = 0.25f, s_dC = 0.25f;
 
+static volatile uint8  g_foc_mode = 0;   /* 0=预定位 1=开环加速 2=闭环 */
+static volatile float32 g_theta_i = 0.0f;
+static volatile float32 g_omega_i = 0.0f;
+static volatile uint16 g_prepos_cnt = 0;
+#define I_START      200.0f   /* 启动电流幅值(码, 2.3A) */
+#define OMEGA_MIN    2.0f     /* 起始电频率 rad/s */
+#define OMEGA_MAX    60.0f    /* 切换电频率 rad/s (≈1rev/s 机械) */
+#define OMEGA_RAMP   100.0f   /* 频率斜坡 rad/s² */
+#define PREPOS_SAMPLES 6000   /* 预定位 200ms 斜坡 + 100ms 稳定 (20kHz) */
+
 IFX_INTERRUPT(FOC_PWM_ISR, 0, 1);
 void FOC_PWM_ISR(void)
 {
@@ -82,8 +92,40 @@ void FOC_PWM_ISR(void)
     float32 ialpha = ia;
     float32 ibeta = (ia + 2.0f * ib) / 1.7320508075688772f;
 
-    float32 sin_e = -sinf(g_elec_angle);
-    float32 cos_e =  cosf(g_elec_angle);
+    if (g_foc_mode == 0)
+    {
+        g_theta_i = 0.0f;
+        g_prepos_cnt++;
+        g_id_ref = (float32)g_prepos_cnt * (I_START / 4000.0f);
+        if (g_id_ref > I_START) g_id_ref = I_START;
+        g_iq_ref = 0.0f;
+        if (g_prepos_cnt > PREPOS_SAMPLES)
+        {
+            g_prepos_cnt = 0;
+            g_foc_mode = 1;
+            g_omega_i = OMEGA_MIN;
+        }
+    }
+    else if (g_foc_mode == 1)
+    {
+        g_omega_i += OMEGA_RAMP * 0.00005f;
+        if (g_omega_i > OMEGA_MAX) g_omega_i = OMEGA_MAX;
+        g_theta_i += g_omega_i * 0.00005f;
+        g_iq_ref = 0.0f;
+        float32 err = g_theta_i - g_elec_angle;
+        while (err > PI) err -= TWO_PI;
+        while (err < -PI) err += TWO_PI;
+        if (g_omega_i >= OMEGA_MAX && fabsf(err) < 0.3f)
+        {
+            g_foc_mode = 2;
+            g_id_ref = 0.0f;
+            g_iq_ref = -50.0f;
+        }
+    }
+
+    float32 ang_use = (g_foc_mode == 2) ? g_elec_angle : g_theta_i;
+    float32 sin_e = -sinf(ang_use);
+    float32 cos_e =  cosf(ang_use);
     float32 id  =  ialpha * cos_e + ibeta * sin_e;
     float32 iq  = -ialpha * sin_e + ibeta * cos_e;
 
@@ -190,7 +232,7 @@ int core0_main(void)
     g_id_ref = 0.0f;
     g_iq_ref = -50.0f;
 
-    FOC_UART_Print("Current loop starting. iq_ref=-200\r\n");
+    FOC_UART_Print("I/f startup: prepos->ramp->closed\r\n");
     for (volatile int j = 0; j < 5000000; j++);
     g_running = 1;
 
@@ -209,7 +251,8 @@ int core0_main(void)
         if (print_cnt >= 500)
         {
             print_cnt = 0;
-            FOC_UART_Print("ang="); FOC_UART_PrintInt((sint32)(g_elec_angle * 1000.0f));
+            FOC_UART_Print("md="); FOC_UART_PrintInt((sint32)g_foc_mode);
+            FOC_UART_Print(" ang="); FOC_UART_PrintInt((sint32)(g_elec_angle * 1000.0f));
             FOC_UART_Print(" id="); FOC_UART_PrintInt((sint32)g_id);
             FOC_UART_Print(" iq="); FOC_UART_PrintInt((sint32)g_iq);
             FOC_UART_Print(" vd="); FOC_UART_PrintInt((sint32)(g_vd * 1000.0f));
