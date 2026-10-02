@@ -59,6 +59,22 @@ static volatile float32 g_id = 0, g_iq = 0, g_vd = 0, g_vq = 0;
 static volatile uint16 g_rawA = 0, g_rawB = 0;
 static float32 s_dA = 0.25f, s_dB = 0.25f, s_dC = 0.25f;
 
+static volatile float32 g_speed_ref = -10.0f;    /* 目标转速 机械rad/s，负=逆时针，打印×100 */
+static volatile float32 g_speed_meas = 0.0f;
+static float32 speed_integral = 0.0f;
+static sint32 speed_delta_win = 0;
+static uint32 speed_t_start = 0;
+static uint8 speed_updated = 0;
+static volatile uint32 g_isr_cnt = 0;
+
+static volatile uint8  g_sw_dbg = 0;              /* 切换瞬间诊断快照 */
+static volatile float32 g_sw_th = 0.0f;
+static volatile float32 g_sw_el = 0.0f;
+
+static volatile uint8 g_dir_chk = 0;              /* 磁极方向确认：0=未切，1=确认中，2=已确认 */
+static sint32 dir_accum = 0;
+static volatile uint32 dir_t_start = 0;
+
 static volatile uint8  g_foc_mode = 0;   /* 0=预定位 1=开环加速 2=闭环 */
 static volatile float32 g_theta_i = 0.0f;
 static volatile float32 g_omega_i = 0.0f;
@@ -74,6 +90,7 @@ void FOC_PWM_ISR(void)
 {
     if (!FOC_PWM_AckIrq()) return;
     if (!g_running) return;
+    g_isr_cnt++;
 
     FOC_ADC_StartSync();
     float32 ia, ib, ic;
@@ -120,6 +137,11 @@ void FOC_PWM_ISR(void)
             g_foc_mode = 2;
             g_id_ref = 0.0f;
             g_iq_ref = -50.0f;
+            g_sw_dbg = 1;
+            g_sw_th = g_theta_i;
+            g_sw_el = g_elec_angle;
+            g_dir_chk = 1;
+            dir_t_start = g_isr_cnt;
         }
     }
 
@@ -227,7 +249,7 @@ int core0_main(void)
     FOC_UART_PrintInt((sint32)zero_offset);
     FOC_UART_Print("\r\n");
 
-    PID_Init(&g_pid_d, 0.0005f, 0.0002f, 0.0f, 0.5f);
+    PID_Init(&g_pid_d, 0.0005f, 0.0002f, 0.0f, 0.2f);  /* vd 限幅 0.2：防电压矢量被拉偏致卡死 */
     PID_Init(&g_pid_q, 0.0005f, 0.0002f, 0.0f, 0.5f);
     g_id_ref = 0.0f;
     g_iq_ref = -50.0f;
@@ -243,9 +265,83 @@ int core0_main(void)
         sint32 delta = (sint32)enc_raw - (sint32)g_lastEnc;
         if (delta > (sint32)ENCODER_RESOLUTION / 2) delta -= (sint32)ENCODER_RESOLUTION;
         if (delta < -(sint32)ENCODER_RESOLUTION / 2) delta += (sint32)ENCODER_RESOLUTION;
+        if (delta > 4096 || delta < -4096)   /* 坏帧过滤：单次位置跳变超限丢弃 */
+        {
+            g_lastEnc = enc_raw;
+            continue;
+        }
         g_lastEnc = enc_raw;
         g_mech += delta;
+        speed_delta_win += delta;
         g_elec_angle = (float32)g_mech * TWO_PI / ENCODER_RESOLUTION * (float32)MOTOR_POLE_PAIRS;
+
+        if (g_isr_cnt - speed_t_start >= 100)   /* 100 ISR = 5ms @20kHz */
+        {
+            float32 dt_s = (float32)(g_isr_cnt - speed_t_start) * 0.00005f;
+            if (dt_s > 1e-4f && dt_s < 1.0f)
+            {
+                float32 raw_speed = (float32)speed_delta_win / ENCODER_RESOLUTION * TWO_PI / dt_s;
+                g_speed_meas = g_speed_meas * 0.8f + raw_speed * 0.2f;
+                speed_updated = 1;
+            }
+            speed_delta_win = 0;
+            speed_t_start = g_isr_cnt;
+        }
+
+        if (g_dir_chk == 1)
+        {
+            dir_accum += delta;
+            if (dir_accum > 400)                   /* 顺转 0.15 rad → 磁极反 π → 翻转 */
+            {
+                g_mech += (sint32)ENCODER_RESOLUTION / MOTOR_POLE_PAIRS / 2;
+                dir_accum = 0;
+                g_dir_chk = 2;
+            }
+            else if (dir_accum < -400)             /* 逆转 0.15 rad → 磁极对，放行 */
+            {
+                dir_accum = 0;
+                g_dir_chk = 2;
+            }
+            else if (g_isr_cnt - dir_t_start >= 40000)  /* 超时兜底：不判定则放行 */
+            {
+                dir_accum = 0;
+                g_dir_chk = 2;
+            }
+        }
+
+        if (speed_updated && g_foc_mode == 2 && g_dir_chk == 2)
+        {
+            if (g_speed_meas * g_speed_ref < -30.0f && fabsf(g_speed_meas) > 3.0f)
+            {
+                g_mech += (sint32)ENCODER_RESOLUTION / MOTOR_POLE_PAIRS / 2;  /* 磁极反 → 翻 π */
+                speed_integral = 0.0f;
+                g_iq_ref = -50.0f;
+                speed_updated = 0;
+                continue;
+            }
+            float32 err_speed = g_speed_ref - g_speed_meas;
+            sint32 windup = (err_speed > 0.0f && g_iq_ref >= 149.0f) ||
+                           (err_speed < 0.0f && g_iq_ref <= -149.0f);
+            if (!windup) speed_integral += err_speed;
+            if (speed_integral > 3000.0f) speed_integral = 3000.0f;
+            if (speed_integral < -3000.0f) speed_integral = -3000.0f;
+            float32 new_iq = 0.5f * err_speed + 0.05f * speed_integral;
+            float32 dq = new_iq - g_iq_ref;
+            if (dq > 6.0f) dq = 6.0f;
+            if (dq < -6.0f) dq = -6.0f;
+            g_iq_ref += dq;
+            if (g_iq_ref > 150.0f) g_iq_ref = 150.0f;
+            if (g_iq_ref < -150.0f) g_iq_ref = -150.0f;
+            speed_updated = 0;
+        }
+
+        if (g_sw_dbg)
+        {
+            g_sw_dbg = 0;
+            FOC_UART_Print("SW th="); FOC_UART_PrintInt((sint32)(g_sw_th * 1000.0f));
+            FOC_UART_Print(" el="); FOC_UART_PrintInt((sint32)(g_sw_el * 1000.0f));
+            FOC_UART_Print("\r\n");
+        }
 
         print_cnt++;
         if (print_cnt >= 500)
@@ -259,6 +355,9 @@ int core0_main(void)
             FOC_UART_Print(" vq="); FOC_UART_PrintInt((sint32)(g_vq * 1000.0f));
             FOC_UART_Print(" ra="); FOC_UART_PrintInt((sint32)g_rawA);
             FOC_UART_Print(" rb="); FOC_UART_PrintInt((sint32)g_rawB);
+            FOC_UART_Print(" spd="); FOC_UART_PrintInt((sint32)(g_speed_meas * 100.0f));
+            FOC_UART_Print(" iqr="); FOC_UART_PrintInt((sint32)g_iq_ref);
+            FOC_UART_Print(" sref="); FOC_UART_PrintInt((sint32)(g_speed_ref * 100.0f));
             FOC_UART_Print("\r\n");
         }
     }
