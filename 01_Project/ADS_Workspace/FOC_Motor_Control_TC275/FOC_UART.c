@@ -101,12 +101,10 @@ void FOC_UART_PrintFloat(float32 val, sint32 decimals)
     FOC_UART_PrintInt(intPart);
     FOC_UART_SendChar('.');
 
-    for (i = 0; i < decimals; i++) {
-        sint32 divisor = 1000;
-        sint32 digit;
-        if (i >= 4) break;
-        digit = (fracPart / divisor) % 10;
-        FOC_UART_SendChar('0' + digit);
+    sint32 divisor = 1000;
+    for (i = 0; i < decimals && i < 4; i++) {
+        sint32 digit = (fracPart / divisor) % 10;
+        FOC_UART_SendChar((char)('0' + digit));
         divisor /= 10;
     }
 }

@@ -69,9 +69,9 @@
 #define SPD_OUT_MAX        5.0f
 
 /*==================== 电机参数 ====================*/
-#define MOTOR_POLE_PAIRS   7             /* 极对数 */
+#define MOTOR_POLE_PAIRS   10            /* 极对数（实测确认 10 对） */
 #define ENCODER_RESOLUTION 16384.0f      /* 14位 */
-#define ENCODER_ZERO_OFFSET 8726          /* 2026-09-29 校准：alpha轴电压对齐法 */
+#define ENCODER_ZERO_OFFSET 10372         /* 2026-09-29 校准：alpha轴电压对齐法 */
 
 /*==================== 系统参数 ====================*/
 #define ADC_VREF           3.3f

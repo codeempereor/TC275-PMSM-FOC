@@ -7,7 +7,7 @@
 
 /* PWM parameters */
 #define PWM_FREQ_HZ     20000.0f
-#define PWM_DEADTIME_S  0.000005f   /* 5us dead time */
+#define PWM_DEADTIME_S  0.000001f   /* 1us dead time */
 
 /* CCU6 objects */
 static IfxCcu6_TimerWithTrigger g_timer;

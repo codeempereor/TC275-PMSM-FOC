@@ -26,7 +26,7 @@ void FOC_ADC_Init(void)
     IfxVadc_Adc_initGroupConfig(&grpCfg, &s_vadc);
     grpCfg.groupId = IfxVadc_GroupId_4;
     grpCfg.master = IfxVadc_GroupId_4;
-    grpCfg.scanRequest.autoscanEnabled = TRUE;
+    grpCfg.scanRequest.autoscanEnabled = FALSE;   /* 单次扫描 + 软件触发：PWM ISR 起点同步采样 */
     grpCfg.scanRequest.triggerConfig.gatingMode = IfxVadc_GatingMode_always;
     grpCfg.arbiter.requestSlotScanEnabled = TRUE;
     IfxVadc_Adc_initGroup(&s_group4, &grpCfg);
@@ -61,6 +61,12 @@ void FOC_ADC_Init(void)
     IfxVadc_Adc_startScan(&s_group4);
 }
 
+/* PWM ISR 起点调用：软件触发一次扫描，采样点固定在当前 PWM 周期中点 */
+void FOC_ADC_StartSync(void)
+{
+    IfxVadc_Adc_startScan(&s_group4);
+}
+
 uint16 FOC_ADC_ReadRaw(uint8 ch)
 {
     IfxVadc_Adc_Channel *channel;
@@ -71,12 +77,14 @@ uint16 FOC_ADC_ReadRaw(uint8 ch)
         case 5: channel = &s_chC; break;
         default: return 0;
     }
-    Ifx_VADC_RES result = IfxVadc_Adc_getResult(channel);
+    Ifx_VADC_RES result;
+    do { result = IfxVadc_Adc_getResult(channel); } while (!result.B.VF);
     return result.B.RESULT;
 }
 
 void FOC_ADC_ReadAll(float32 *ia, float32 *ib, float32 *ic)
 {
+    FOC_ADC_StartSync();
     uint16 rawA = FOC_ADC_ReadRaw(7);
     uint16 rawB = FOC_ADC_ReadRaw(6);
     uint16 rawC = FOC_ADC_ReadRaw(5);

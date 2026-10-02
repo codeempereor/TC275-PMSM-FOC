@@ -2,6 +2,7 @@
 #include "FOC_UART.h"
 #include "IfxQspi_SpiMaster.h"
 #include "IfxQspi_PinMap.h"
+#include "IfxCcu6_Timer.h"
 #include "Bsp.h"
 
 /*
@@ -18,7 +19,8 @@ static IfxQspi_SpiMaster_Channel s_spiChannel;
 static uint16 s_txBuffer[SPI_BUFFER_SIZE];
 static uint16 s_rxBuffer[SPI_BUFFER_SIZE];
 
-/* Interrupt priorities. PWM ISR already uses priority 1, so use 4/5/6 here. */
+/* Interrupt priorities: QSPI must preempt the T13 angle ISR (priority 7),
+ * so TX/RX/ER use 4/5/6. */
 #define QSPI1_TX_PRIO  4
 #define QSPI1_RX_PRIO  5
 #define QSPI1_ER_PRIO  6
@@ -68,6 +70,20 @@ static uint16 as5047p_make_read_cmd(uint16 reg)
     return cmd;
 }
 
+/* T13 angle-sampling timer (20 kHz): reads encoder and updates g_elec_angle.
+ * Priority 7: QSPI ISRs (4/5/6) can preempt it, so the blocking SPI exchange
+ * never deadlocks. PWM ISR (priority 1) reads g_elec_angle atomically.
+ * ServiceRequest_2 is used because TimerWithTrigger (T12/PWM) owns SR0 and SR1. */
+#define ANGLE_TIMER_PRIO 7
+static IfxCcu6_Timer s_angleTimer;
+
+IFX_INTERRUPT(FOC_AngleISR, 0, ANGLE_TIMER_PRIO);
+void FOC_AngleISR(void)
+{
+    IfxCcu6_clearInterruptStatusFlag(&MODULE_CCU60, IfxCcu6_InterruptSource_t13PeriodMatch);
+    /* 角度改为在主循环里读 SPI 更新（定位 T13 阻塞卡死，临时改动） */
+}
+
 void FOC_SPI_Init(void)
 {
     IfxQspi_SpiMaster_Config spiCfg;
@@ -104,6 +120,27 @@ void FOC_SPI_Init(void)
     chCfg.sls.output.driver = IfxPort_PadDriver_cmosAutomotiveSpeed3;
 
     IfxQspi_SpiMaster_initChannel(&s_spiChannel, &chCfg);
+
+    /* Start T13 angle-sampling timer (20 kHz, independent of T12).
+     * base.t13Frequency = SPB clock (100 MHz) with t13Period = 5000 -> 20 kHz. */
+    IfxCcu6_Timer_Config tCfg;
+    IfxCcu6_Timer_initModuleConfig(&tCfg, &MODULE_CCU60);
+    tCfg.base.t13Frequency = 100000000.0f;
+    tCfg.base.t13Period    = 5000;
+    tCfg.timer             = IfxCcu6_TimerId_t13;
+    tCfg.synchronousOperation = FALSE;
+    tCfg.trigger.t13InSyncWithT12 = FALSE;   /* do NOT sync T13 with T12 (PWM) */
+    tCfg.clock.t13ExtClockEnabled = FALSE;
+    tCfg.timer13.counterValue = 0;
+
+    /* T13 period-match interrupt -> ServiceRequest_2, priority 7 */
+    tCfg.interrupt2.source         = IfxCcu6_InterruptSource_t13PeriodMatch;
+    tCfg.interrupt2.serviceRequest = IfxCcu6_ServiceRequest_2;
+    tCfg.interrupt2.priority       = ANGLE_TIMER_PRIO;
+    tCfg.interrupt2.typeOfService  = IfxSrc_Tos_cpu0;
+
+    IfxCcu6_Timer_initModule(&s_angleTimer, &tCfg);
+    IfxCcu6_Timer_start(&s_angleTimer);
 }
 
 /* Blocking 16-bit full-duplex exchange.

@@ -19,8 +19,9 @@ float32 PID_Calc(PID_t *pid, float32 target, float32 current)
     float32 error = target - current;
     float32 derivative = error - pid->prevError;
     pid->integral += error;
-    if (pid->integral > pid->outMax) pid->integral = pid->outMax;
-    if (pid->integral < -pid->outMax) pid->integral = -pid->outMax;
+    float32 intLimit = (pid->ki > 0.0f) ? (pid->outMax / pid->ki) : 1e9f;
+    if (pid->integral > intLimit) pid->integral = intLimit;
+    if (pid->integral < -intLimit) pid->integral = -intLimit;
     pid->prevError = error;
     float32 output = pid->kp * error + pid->ki * pid->integral + pid->kd * derivative;
     if (output > pid->outMax) output = pid->outMax;
@@ -52,79 +53,23 @@ void FOC_InvPark(float32 vd, float32 vq, float32 angle, float32 *valpha, float32
 
 void FOC_SVPWM(float32 valpha, float32 vbeta, float32 *dutyA, float32 *dutyB, float32 *dutyC)
 {
-    float32 t1, t2, t0;
-    float32 va, vb, vc;
-    float32 x = vbeta;
-    float32 y = (SQRT3 * valpha + vbeta) * 0.5f;
-    float32 z = (-SQRT3 * valpha + vbeta) * 0.5f;
+    float32 va = valpha;
+    float32 vb = -0.5f * valpha + 0.8660254f * vbeta;
+    float32 vc = -0.5f * valpha - 0.8660254f * vbeta;
 
-    uint8 sector = 0;
-    if (x > 0) sector += 1;
-    if (y > 0) sector += 2;
-    if (z > 0) sector += 4;
+    float32 vmax = va;
+    if (vb > vmax) vmax = vb;
+    if (vc > vmax) vmax = vc;
+    float32 vmin = va;
+    if (vb < vmin) vmin = vb;
+    if (vc < vmin) vmin = vc;
 
-    switch (sector) {
-        case 3:
-            t1 = z; t2 = x; break;
-        case 1:
-            t1 = -y; t2 = -z; break;
-        case 5:
-            t1 = y; t2 = -x; break;
-        case 4:
-            t1 = -x; t2 = z; break;
-        case 6:
-            t1 = -z; t2 = y; break;
-        case 2:
-            t1 = x; t2 = -y; break;
-        default:
-            t1 = 0; t2 = 0; break;
-    }
+    float32 vzero = (vmax + vmin) * 0.5f;
+    va -= vzero;
+    vb -= vzero;
+    vc -= vzero;
 
-    t0 = 1.0f - t1 - t2;
-    if (t0 < 0) {
-        float32 scale = 1.0f / (t1 + t2);
-        t1 *= scale;
-        t2 *= scale;
-        t0 = 0;
-    }
-
-    switch (sector) {
-        case 3:
-            va = t1 + t2 + t0 * 0.5f;
-            vb = t2 + t0 * 0.5f;
-            vc = t0 * 0.5f;
-            break;
-        case 1:
-            va = t1 + t0 * 0.5f;
-            vb = t1 + t2 + t0 * 0.5f;
-            vc = t0 * 0.5f;
-            break;
-        case 5:
-            va = t0 * 0.5f;
-            vb = t1 + t2 + t0 * 0.5f;
-            vc = t2 + t0 * 0.5f;
-            break;
-        case 4:
-            va = t0 * 0.5f;
-            vb = t1 + t0 * 0.5f;
-            vc = t1 + t2 + t0 * 0.5f;
-            break;
-        case 6:
-            va = t2 + t0 * 0.5f;
-            vb = t0 * 0.5f;
-            vc = t1 + t2 + t0 * 0.5f;
-            break;
-        case 2:
-            va = t1 + t2 + t0 * 0.5f;
-            vb = t0 * 0.5f;
-            vc = t1 + t0 * 0.5f;
-            break;
-        default:
-            va = vb = vc = 0.5f;
-            break;
-    }
-
-    *dutyA = va;
-    *dutyB = vb;
-    *dutyC = vc;
+    *dutyA = va * 0.5f + 0.5f;
+    *dutyB = vb * 0.5f + 0.5f;
+    *dutyC = vc * 0.5f + 0.5f;
 }

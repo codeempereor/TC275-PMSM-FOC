@@ -4,6 +4,10 @@
 #include "Ifx_Types.h"
 #include "FOC_Config.h"
 
+extern volatile float32 g_elec_angle;
+extern volatile uint8   g_running;
+extern uint16           g_zero_offset;
+
 void     FOC_SPI_Init(void);
 uint16   FOC_SPI_ReadRegisterRaw(uint16 reg);
 uint16   FOC_SPI_GetAngleRaw(void);
