@@ -4,7 +4,8 @@
 #include "IfxPort.h"
 
 static IfxVadc_Adc         s_vadc;
-static IfxVadc_Adc_Group   s_group4;
+static IfxVadc_Adc_Group   s_group0;   /* 电位器旋钮组 (AN0) */
+static IfxVadc_Adc_Group   s_group4;   /* 三相电流采样组 */
 static IfxVadc_Adc_Channel s_chA;
 static IfxVadc_Adc_Channel s_chB;
 static IfxVadc_Adc_Channel s_chC;
@@ -12,16 +13,35 @@ static IfxVadc_Adc_Channel s_chPot;  /* potentiometer (knob) channel */
 
 void FOC_ADC_Init(void)
 {
-    /* Configure ADC input pins as analog input (no pull device) */
-    IfxPort_setPinModeInput(&MODULE_P40, 0, IfxPort_InputMode_noPullDevice);  /* Potentiometer = P40.0 */
+    /* 电流采样引脚配置为模拟输入（无上下拉）：P40.7/8/9 = AN37/38/39 = Group4 Ch5/6/7 */
     IfxPort_setPinModeInput(&MODULE_P40, 7, IfxPort_InputMode_noPullDevice);  /* ISEN_C = P40.7 */
     IfxPort_setPinModeInput(&MODULE_P40, 8, IfxPort_InputMode_noPullDevice);  /* ISEN_B = P40.8 */
     IfxPort_setPinModeInput(&MODULE_P40, 9, IfxPort_InputMode_noPullDevice);  /* ISEN_A = P40.9 */
+    /* 电位器 AN0 是纯模拟输入（数据手册引脚表无端口控制器，iLLD G0_0_AN0 = NULL_PTR），无需 GPIO 配置 */
 
     IfxVadc_Adc_Config modCfg;
     IfxVadc_Adc_initModuleConfig(&modCfg, &MODULE_VADC);
     IfxVadc_Adc_initModule(&s_vadc, &modCfg);
 
+    /* --- Group0：电位器旋钮 AN0 = G0CH0，后台自动连续扫描 --- */
+    IfxVadc_Adc_GroupConfig grpCfg0;
+    IfxVadc_Adc_initGroupConfig(&grpCfg0, &s_vadc);
+    grpCfg0.groupId = IfxVadc_GroupId_0;
+    grpCfg0.master = IfxVadc_GroupId_0;
+    grpCfg0.scanRequest.autoscanEnabled = TRUE;   /* 旋钮是慢变量，自动扫描持续刷新结果寄存器 */
+    grpCfg0.scanRequest.triggerConfig.gatingMode = IfxVadc_GatingMode_always;
+    grpCfg0.arbiter.requestSlotScanEnabled = TRUE;
+    IfxVadc_Adc_initGroup(&s_group0, &grpCfg0);
+
+    IfxVadc_Adc_ChannelConfig chCfg0;
+    IfxVadc_Adc_initChannelConfig(&chCfg0, &s_group0);
+    chCfg0.channelId = IfxVadc_ChannelId_0;        /* AN0 = 板载电位器 */
+    chCfg0.resultRegister = IfxVadc_ChannelResult_0;
+    IfxVadc_Adc_initChannel(&s_chPot, &chCfg0);
+    IfxVadc_Adc_setScan(&s_group0, (1 << 0), (1 << 0));
+    IfxVadc_Adc_startScan(&s_group0);
+
+    /* --- Group4：三相电流采样，PWM ISR 软件触发同步扫描 --- */
     IfxVadc_Adc_GroupConfig grpCfg;
     IfxVadc_Adc_initGroupConfig(&grpCfg, &s_vadc);
     grpCfg.groupId = IfxVadc_GroupId_4;
@@ -49,13 +69,8 @@ void FOC_ADC_Init(void)
     chCfg.resultRegister = IfxVadc_ChannelResult_5;
     IfxVadc_Adc_initChannel(&s_chC, &chCfg);
 
-    /* Potentiometer: P40.0 = AN32 = Group4 Ch0 */
-    chCfg.channelId = IfxVadc_ChannelId_0;
-    chCfg.resultRegister = IfxVadc_ChannelResult_0;
-    IfxVadc_Adc_initChannel(&s_chPot, &chCfg);
-
-    /* Add channels 0/5/6/7 to the scan request */
-    uint32 channelMask = (1 << 0) | (1 << 5) | (1 << 6) | (1 << 7);
+    /* 仅扫描电流通道 5/6/7 */
+    uint32 channelMask = (1 << 5) | (1 << 6) | (1 << 7);
     IfxVadc_Adc_setScan(&s_group4, channelMask, channelMask);
 
     IfxVadc_Adc_startScan(&s_group4);

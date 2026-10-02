@@ -59,8 +59,10 @@ static volatile float32 g_id = 0, g_iq = 0, g_vd = 0, g_vq = 0;
 static volatile uint16 g_rawA = 0, g_rawB = 0;
 static float32 s_dA = 0.25f, s_dB = 0.25f, s_dC = 0.25f;
 
-static volatile float32 g_speed_ref = -10.0f;    /* 目标转速 机械rad/s，负=逆时针，打印×100 */
-static volatile float32 g_speed_meas = 0.0f;
+static volatile float32 g_speed_ref = 0.0f;     /* 目标转速 机械rad/s（旋钮给定），负=逆时针，打印×100 */
+static float32 g_speed_ref_filt = 0.0f;         /* sref 低通滤波，防旋钮跳变 */
+static uint16 g_pot_raw = 0;                    /* 电位器原始 12bit ADC 值 */
+static float32 g_speed_meas = 0.0f;
 static float32 speed_integral = 0.0f;
 static sint32 speed_delta_win = 0;
 static uint32 speed_t_start = 0;
@@ -309,6 +311,18 @@ int core0_main(void)
             }
         }
 
+        /* 旋钮调速：每 100 次主循环读一次电位器（G0CH0=AN0，12bit 0-4095）→ sref 0..-12 rad/s */
+        static uint16 pot_cnt = 0;
+        if (++pot_cnt >= 100)
+        {
+            pot_cnt = 0;
+            g_pot_raw = FOC_ADC_ReadRaw(0);
+            float32 target = (g_pot_raw < 40) ? 0.0f
+                            : -(float32)(g_pot_raw - 40) / 4055.0f * 12.0f;  /* 死区40码后线性升到 -12 */
+            g_speed_ref_filt = g_speed_ref_filt * 0.9f + target * 0.1f;       /* 一阶低通防跳变 */
+            g_speed_ref = g_speed_ref_filt;
+        }
+
         if (speed_updated && g_foc_mode == 2 && g_dir_chk == 2)
         {
             if (g_speed_meas * g_speed_ref < -30.0f && fabsf(g_speed_meas) > 3.0f)
@@ -358,6 +372,7 @@ int core0_main(void)
             FOC_UART_Print(" spd="); FOC_UART_PrintInt((sint32)(g_speed_meas * 100.0f));
             FOC_UART_Print(" iqr="); FOC_UART_PrintInt((sint32)g_iq_ref);
             FOC_UART_Print(" sref="); FOC_UART_PrintInt((sint32)(g_speed_ref * 100.0f));
+            FOC_UART_Print(" pot="); FOC_UART_PrintInt((sint32)g_pot_raw);
             FOC_UART_Print("\r\n");
         }
     }
