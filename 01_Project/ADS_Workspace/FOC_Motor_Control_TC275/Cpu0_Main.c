@@ -188,7 +188,7 @@ int core0_main(void)
     PID_Init(&g_pid_d, 0.0005f, 0.0002f, 0.0f, 0.5f);
     PID_Init(&g_pid_q, 0.0005f, 0.0002f, 0.0f, 0.5f);
     g_id_ref = 0.0f;
-    g_iq_ref = -50.0f;
+    g_iq_ref = 50.0f;
 
     FOC_UART_Print("Current loop starting. iq_ref=-200\r\n");
     for (volatile int j = 0; j < 5000000; j++);
