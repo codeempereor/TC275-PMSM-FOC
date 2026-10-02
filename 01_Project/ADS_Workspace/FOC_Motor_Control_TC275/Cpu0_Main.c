@@ -85,10 +85,9 @@ static uint8  g_kick_fail = 0;                 /* 连续冲击失败次数 */
 static volatile float32 s_duty_hi = 0.45f;     /* 动态 duty 上限，kick 时放宽到 0.9 */
 #define STALL_SPD_LIM  0.5f    /* 堵转判定：|spd|<0.5 rad/s */
 #define STALL_SREF_MIN 2.0f    /* 堵转判定：|sref|>2 rad/s 才判（回零不算堵） */
-#define STALL_IQ_SAT   140.0f  /* 堵转判定：速度环输出饱和 */
 #define STALL_WINDOWS  40      /* 持续 200ms 判堵转 */
-#define KICK_WINDOWS   20      /* 冲击 100ms */
-#define KICK_VOLTAGE   0.9f    /* 冲击电压幅度（duty 上限 0.9 → 相电压约翻倍） */
+#define KICK_WINDOWS   40      /* 冲击 200ms：长时间推力累积角动量冲出齿槽 */
+#define KICK_VOLTAGE   1.0f    /* 冲击电压：满调制（duty 上限 0.95 → 相电压约 13V） */
 #define KICK_SPD_EXIT  2.0f    /* 冲击成功判定：spd>2 rad/s */
 #define KICK_FAIL_MAX  3       /* 连续失败 3 次停止冲击，防持续大电流 */
 
@@ -363,7 +362,11 @@ int core0_main(void)
                 {
                     g_kick = 0;
                     s_duty_hi = 0.45f;
-                    if (++g_kick_fail >= KICK_FAIL_MAX) g_kick_fail = KICK_FAIL_MAX;  /* 记失败 */
+                    if (++g_kick_fail >= KICK_FAIL_MAX)
+                    {
+                        g_kick_fail = KICK_FAIL_MAX;
+                        g_iq_ref = -50.0f;   /* 3次失败：降回低力矩等待（防持续大电流发热），旋钮回零后复位 */
+                    }
                 }
                 else if (fabsf(g_speed_meas) > KICK_SPD_EXIT || fabsf(g_speed_ref) < 1.0f)
                 {
@@ -397,16 +400,17 @@ int core0_main(void)
                 if (g_iq_ref > 150.0f) g_iq_ref = 150.0f;
                 if (g_iq_ref < -150.0f) g_iq_ref = -150.0f;
 
-                /* 堵转检测：spd≈0 且 有给定 且 速度环已饱和 → 持续 200ms 触发冲击脱困 */
+                /* 堵转检测：spd≈0 且 有给定（不依赖 iqr 饱和——kick 失败后 iqr 回落到 -6 附近不饱和，
+                 * 若靠饱和判据则 kick 永远无法重触发）→ 持续 200ms 触发冲击脱困 */
                 if (fabsf(g_speed_meas) < STALL_SPD_LIM && fabsf(g_speed_ref) > STALL_SREF_MIN
-                    && fabsf(g_iq_ref) > STALL_IQ_SAT && g_kick_fail < KICK_FAIL_MAX)
+                    && g_kick_fail < KICK_FAIL_MAX)
                 {
                     if (++g_stall_cnt >= STALL_WINDOWS)
                     {
                         g_stall_cnt = 0;
                         g_kick = 1;
                         g_kick_cnt = KICK_WINDOWS;
-                        s_duty_hi = 0.9f;
+                        s_duty_hi = 0.95f;
                         speed_integral = 0.0f;
                     }
                 }
