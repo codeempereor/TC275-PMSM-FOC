@@ -291,9 +291,13 @@ void FOC_PWM_ISR(void)
     }
     else
     {
-        vd = PID_Calc(&g_pid_d, g_id_ref, g_id_filt);
-        /* I/f 段 vq 硬冻结 0：iq 环追 0 时被采样尖峰打飞（实测 vq ±500 饱和乱打 → 电机抖）。
-         * 励磁 id 环继续闭环 → 拖动力矩稳定；vq=0 无 iq 扰动 → 磁场平滑旋转 */
+        /* I/f 段开环励磁电压直驱（V/f）：vd 直给 0.5V 不跑 d 轴电流环——
+         * 闭环建立励磁被采样污染不可靠（实测 id 只 ~0.6-1.1A、vd 恒饱和，
+         * 拖动力矩时有时无 → 转子在齿槽位摆，启动成败靠运气）。
+         * 开环：转子不动时反电动势≈0 → 电流 (0.5-Rs)/R≈1.7A 足力矩拖动；
+         * 转子转起后反电动势升 → 电流自动回落（天然恒流）→ 可靠拖动。
+         * vq=0 无 iq 扰动（iq 环追 0 会被采样尖峰打飞 → 抖） */
+        vd = (g_foc_mode == 1) ? 0.5f : PID_Calc(&g_pid_d, g_id_ref, g_id_filt);
         vq = (g_foc_mode == 1) ? 0.0f : PID_Calc(&g_pid_q, g_iq_ref, g_iq_filt);
         valpha = vd * cos_e - vq * sin_e;
         vbeta  = vd * sin_e + vq * cos_e;
