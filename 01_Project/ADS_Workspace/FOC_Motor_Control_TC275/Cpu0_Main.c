@@ -235,7 +235,7 @@ void FOC_PWM_ISR(void)
             g_dir_chk = 2;   /* I/f 方向已跟随旋钮 → 切闭环时方向已知，跳过方向确认窗，
                               * 速度环/力矩预充立即接管（否则 iqr=-20 原地抖 2 秒等超时） */
             g_spd_ramp = g_speed_ref;  /* 斜坡直接锁目标（不归零重爬）：boost 结束速度环首拍即稳态区 */
-            g_boost_cnt = 30;          /* 切环力矩 boost：150ms 冲出齿槽势阱，
+            g_boost_cnt = 30;          /* 切环力矩 boost：150ms 1.15A 磁场角定向冲出齿槽势阱，
                                         * 防切环瞬间力矩骤降（iqr -20 起步=0.23A<齿槽）→ 卡死微摆 */
             dir_t_start = g_isr_cnt;
         }
@@ -571,7 +571,15 @@ int core0_main(void)
                  * 恢复 1.15A + 延长 150ms 冲出势阱。编码器增量钳位 ±800 已兜住打飞风险 */
                 if (g_boost_cnt > 0)
                 {
-                    g_iq_ref = (g_speed_ref < 0.0f) ? -60.0f : 60.0f;
+                    /* boost 期间 Park 用 θ_i 磁场角连续积分（纯积分无噪声）：切环瞬间
+                     * 编码器读数被电磁噪声污染 → 跟随 el 方向乱(正冲 +19.9)、冻结 el
+                     * 转子转开就错位(推不动 0.7A 卡齿槽)。θ_i 连续前移 → iq=-100 相对
+                     * 转子保持 90° → 1.15A 大力矩方向确定冲出任何齿槽位。SW 实测负载角
+                     * ≈0.005 rad → boost 结束切回编码器几乎零跳变 */
+                    float32 dir_b = (g_speed_ref < 0.0f) ? -1.0f : 1.0f;
+                    g_theta_i += dir_b * g_omega_i * 0.00005f;
+                    g_elec_angle = g_theta_i;
+                    g_iq_ref = (g_speed_ref < 0.0f) ? -100.0f : 100.0f;
                     g_boost_cnt--;
                     g_spd_prev = g_speed_meas;
                     g_spd_ramp = g_speed_ref;
