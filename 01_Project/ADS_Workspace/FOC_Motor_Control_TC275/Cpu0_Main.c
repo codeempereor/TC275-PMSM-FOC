@@ -63,6 +63,8 @@ static float32 s_dA = 0.25f, s_dB = 0.25f, s_dC = 0.25f;
 
 static volatile float32 g_speed_ref = 0.0f;     /* 目标转速 机械rad/s（旋钮给定），负=逆时针，打印×100 */
 static float32 g_speed_ref_filt = 0.0f;         /* sref 低通滤波，防旋钮跳变 */
+static volatile float32 g_spd_ramp = 0.0f;      /* 速度环目标斜坡：5ms 爬 0.1 rad/s(20 rad/s²)，
+                                                * 0.4s 平滑升到 8，防启动即大误差→力矩饱和→狂加速过冲→反向振荡("一卡一卡") */
 static uint16 g_pot_raw = 0;                    /* 电位器原始 12bit ADC 值 */
 static float32 g_speed_meas = 0.0f;
 static float32 speed_integral = 0.0f;
@@ -182,6 +184,7 @@ void FOC_PWM_ISR(void)
             g_sw_el = g_elec_angle;
             g_dir_chk = 2;   /* I/f 方向已跟随旋钮 → 切闭环时方向已知，跳过方向确认窗，
                               * 速度环/力矩预充立即接管（否则 iqr=-20 原地抖 2 秒等超时） */
+            g_spd_ramp = 0.0f;  /* 目标斜坡归零，闭环后平滑爬升，不一步到 -8 */
             dir_t_start = g_isr_cnt;
         }
     }
@@ -512,13 +515,19 @@ int core0_main(void)
                 {
                     g_pole_chk_cnt = 0;
                 }
-                float32 err_speed = g_speed_ref - g_speed_meas;
+                /* 速度环目标斜坡：每 5ms 爬 0.1 rad/s（20 rad/s²），目标 8 需 0.4s。
+                 * 启动时误差始终小 → 力矩温和 → 不过冲不反向振荡 */
+                float32 ramp_delta = g_speed_ref - g_spd_ramp;
+                if (ramp_delta > 0.1f) g_spd_ramp += 0.1f;
+                else if (ramp_delta < -0.1f) g_spd_ramp -= 0.1f;
+                else g_spd_ramp = g_speed_ref;
+                float32 err_speed = g_spd_ramp - g_speed_meas;
                 sint32 windup = (err_speed > 0.0f && g_iq_ref >= 149.0f) ||
                                (err_speed < 0.0f && g_iq_ref <= -149.0f);
                 if (!windup) speed_integral += err_speed;
                 if (speed_integral > 3000.0f) speed_integral = 3000.0f;
                 if (speed_integral < -3000.0f) speed_integral = -3000.0f;
-                float32 new_iq = 0.8f * err_speed + 0.08f * speed_integral;
+                float32 new_iq = 0.3f * err_speed + 0.05f * speed_integral;
 
                 /* 力矩预充：spd 跌到 0 附近且有给定 → 40ms 后直接满力矩冲齿槽。
                  * 速度环 Kp 项在静止起步时只有 ~0.07A，积分爬满需 >1s，齿槽等不及；
