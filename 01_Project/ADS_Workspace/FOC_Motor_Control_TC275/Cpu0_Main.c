@@ -68,6 +68,13 @@ static volatile float32 g_spd_ramp = 0.0f;      /* 速度环目标斜坡：5ms �
 static uint16 g_pot_raw = 0;                    /* 电位器原始 12bit ADC 值 */
 static float32 g_speed_meas = 0.0f;
 static float32 g_spd_prev = 0.0f;   /* 速度环 D 项（微分阻尼）：上一窗滤波转速 */
+/* I/f 同步校验（防失步/反向切环→失控高速）：转子电角增量须与磁场方向一致 */
+static uint32 g_if_dt_cnt = 0;      /* 5ms 方向校验窗口计数 */
+static float32 g_el_prev_if = 0.0f; /* 上一校验窗口电角 */
+static uint32 g_if_sync_cnt = 0;    /* 连续同步窗口数（≥8 才允许切环） */
+static uint32 g_if_stall_cnt = 0;   /* 同步失败连续窗口数（≥20 → 磁极反，翻 π 重试） */
+static uint32 g_if_flip_cnt = 0;    /* 翻 π 重试次数（限 3） */
+static uint32 g_ovspd_cnt = 0;      /* 闭环超速失控窗口计数（≥20 → 停机翻 π 重启） */
 static float32 speed_integral = 0.0f;
 static sint32 speed_delta_win = 0;
 static uint32 speed_t_start = 0;
@@ -172,7 +179,29 @@ void FOC_PWM_ISR(void)
         float32 err = g_theta_i - g_elec_angle;
         while (err > PI) err -= TWO_PI;
         while (err < -PI) err += TWO_PI;
-        if (g_omega_i >= OMEGA_MAX && fabsf(err) < 0.3f && fabsf(g_speed_meas) > 5.0f)
+        /* 同步校验：每 100 窗(5ms)累计一次电角增量，方向与磁场一致才算同步。
+         * 实测无校验时：转子反向微动/失步也会切环（角度差每 2π 重合）→ 切环方向错 →
+         * 失控加速到 1000 RPM（反电动势>驱动电压刹不住）→ 旋钮调速无效 */
+        if (++g_if_dt_cnt >= 100)
+        {
+            g_if_dt_cnt = 0;
+            float32 el_delta = g_elec_angle - g_el_prev_if;
+            g_el_prev_if = g_elec_angle;
+            if (el_delta > PI) el_delta -= TWO_PI;
+            if (el_delta < -PI) el_delta += TWO_PI;
+            if (dir_if * el_delta > 0.0f)
+            {
+                g_if_sync_cnt++;          /* 连续同步窗累加 */
+                g_if_stall_cnt = 0;
+            }
+            else
+            {
+                g_if_sync_cnt = 0;
+                if (g_omega_i >= OMEGA_MAX) g_if_stall_cnt++;
+            }
+        }
+        if (g_omega_i >= OMEGA_MAX && fabsf(err) < 0.3f && fabsf(g_speed_meas) > 5.0f
+            && g_if_sync_cnt >= 8)   /* 最近 40ms 连续同步才切：转子真沿磁场方向转，杜绝失步带病切换 */
         {
             g_foc_mode = 2;
             g_id_ref = 0.0f;
@@ -191,6 +220,16 @@ void FOC_PWM_ISR(void)
                               * 速度环/力矩预充立即接管（否则 iqr=-20 原地抖 2 秒等超时） */
             g_spd_ramp = 0.0f;  /* 目标斜坡归零，闭环后平滑爬升，不一步到 -8 */
             dir_t_start = g_isr_cnt;
+        }
+        else if (g_omega_i >= OMEGA_MAX && g_if_stall_cnt >= 20 && g_if_flip_cnt < 3)
+        {
+            /* 磁场转满速后 1s 转子仍不同步（磁极反）→ 翻 π 重置 I/f 重试（限 3 次） */
+            g_if_flip_cnt++;
+            g_mech += (sint32)ENCODER_RESOLUTION / MOTOR_POLE_PAIRS / 2;
+            g_theta_i = g_elec_angle;
+            g_omega_i = OMEGA_MIN;
+            g_if_sync_cnt = 0;
+            g_if_stall_cnt = 0;
         }
     }
 
@@ -525,6 +564,29 @@ int core0_main(void)
                 else
                 {
                     g_pole_chk_cnt = 0;
+                }
+                /* 超速失控兜底：|spd|>25 rad/s（目标 8 的 3 倍）持续 100ms → 停机翻 π 重启。
+                 * 实测失控时反电动势>驱动电压，iqr 恒 +150 饱和也刹不住（稳定 1000 RPM），
+                 * 只能翻 π + 回预定位重新 I/f 纠正磁极方向 */
+                if (fabsf(g_speed_meas) > 2500.0f)
+                {
+                    if (++g_ovspd_cnt >= 20)
+                    {
+                        g_ovspd_cnt = 0;
+                        g_foc_mode = 0;
+                        g_prepos_cnt = 0;
+                        g_id_ref = 0.0f;
+                        g_iq_ref = 0.0f;
+                        g_mech += (sint32)ENCODER_RESOLUTION / MOTOR_POLE_PAIRS / 2;
+                        g_if_flip_cnt = 0;
+                        g_if_sync_cnt = 0;
+                        g_if_stall_cnt = 0;
+                        g_spd_ramp = g_speed_ref;
+                    }
+                }
+                else
+                {
+                    g_ovspd_cnt = 0;
                 }
                 /* 速度环目标斜坡：每 5ms 爬 0.15 rad/s（30 rad/s²），目标 8 需 0.27s。
                  * 启动时误差始终小 → 力矩温和 → 不过冲不反向振荡 */
