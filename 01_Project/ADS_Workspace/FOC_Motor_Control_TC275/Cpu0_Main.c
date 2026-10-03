@@ -177,8 +177,10 @@ void FOC_PWM_ISR(void)
             g_id_ref = 0.0f;
             g_iq_ref = -20.0f;   /* 切闭环直接给稳态力矩（0.23A）：I/f 8.5 → 目标 8 只需微减速，
                                   * 不经过转速零点 → 不卡齿槽。任何高于稳态的初值回落时都会拉崩转速 */
-            /* 积分器预充：让速度环首拍输出 ≈ -20，力矩无缝交接（Kp=0.5/Ki=0.04 同步） */
-            speed_integral = (g_iq_ref - 0.5f * (g_speed_ref - g_speed_meas)) / 0.04f;
+            /* 积分器预充：让速度环首拍输出接近稳态力矩（-20 码）。
+             * 用温和 ±100 而非公式 -400：深负偏置会压死超速刹车（0.04×(-400)=-16 抵消 Kp），
+             * 造成冲出-掉速-预充循环；±100 下超速分支（纯比例）可正常刹住 */
+            speed_integral = (g_speed_ref < 0.0f) ? -100.0f : 100.0f;
             if (speed_integral > 3000.0f) speed_integral = 3000.0f;
             if (speed_integral < -3000.0f) speed_integral = -3000.0f;
             g_sw_dbg = 1;
@@ -536,9 +538,21 @@ int core0_main(void)
                  * 到达目标后 new_iq 仍为负 → 稳态速度被顶到 ~17 rad/s（目标 8）且排不掉 → 超速+卡顿 */
                 if (fabsf(g_spd_ramp - g_speed_ref) < 0.05f && !windup) speed_integral += err_speed;
                 else if (fabsf(g_spd_ramp - g_speed_ref) >= 0.05f) speed_integral = 0.0f;
-                if (speed_integral > 400.0f) speed_integral = 400.0f;
-                if (speed_integral < -400.0f) speed_integral = -400.0f;
-                float32 new_iq = 0.5f * err_speed + 0.04f * speed_integral;
+                if (speed_integral > 800.0f) speed_integral = 800.0f;
+                if (speed_integral < -800.0f) speed_integral = -800.0f;
+                float32 new_iq;
+                /* 超速（同向超出目标 0.5）：纯比例强刹，防深负积分抵消刹车。
+                 * 此前积分深负（-400，0.04×(-400)=-16）压过 Kp(+3) → 超速还加速 →
+                 * 冲出-滑行-掉速-预充循环（"一卡一卡"，实测超速 iqr=-9~-12 不刹车） */
+                if ((g_spd_ramp < 0.0f && g_speed_meas < g_spd_ramp - 0.5f) ||
+                    (g_spd_ramp > 0.0f && g_speed_meas > g_spd_ramp + 0.5f))
+                {
+                    new_iq = 1.5f * err_speed;
+                }
+                else
+                {
+                    new_iq = 1.0f * err_speed + 0.04f * speed_integral;
+                }
 
                 /* 力矩预充：spd 跌到 0 附近且有给定 → 40ms 后满力矩冲齿槽。
                  * 速度环 Kp 项在静止起步时只有 ~0.07A，积分爬满需 >1s，齿槽等不及；
@@ -550,6 +564,8 @@ int core0_main(void)
                 {
                     if (++g_torq_pump_cnt >= 8)
                     {
+                        speed_integral = 0.0f;   /* 冲出前清积分：冲出后超速分支纯比例刹，回落积分从 0 重建，
+                                                  * 不残留掉速段的负偏置（否则冲出后 0.04×(-偏置) 抵消刹车） */
                         new_iq = (g_speed_ref < 0.0f) ? -100.0f : 100.0f;
                     }
                 }
