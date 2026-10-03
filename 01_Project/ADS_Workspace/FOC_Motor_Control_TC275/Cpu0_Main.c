@@ -128,7 +128,9 @@ static volatile uint16 g_prepos_cnt = 0;
 #define OMEGA_RAMP   25.0f    /* 频率斜坡 rad/s²（3.4s 到 85）：云台电机惯量大，
                                * 100 rad/s² 加速过快会丢步（转子没跟上就切闭环→启动全靠预充→
                                * 预充冲出过头→速度环刹车过头→走走停停→卡死） */
-#define PREPOS_SAMPLES 6000   /* 预定位 200ms 斜坡 + 100ms 稳定 (20kHz) */
+#define PREPOS_SAMPLES 12000  /* 预定位 400ms 斜坡 + 200ms 稳定 (20kHz)：云台电机齿槽强，
+                               * 6000 窗(300ms)不够转子到位 → 每次上电停在不同齿槽位 →
+                               * 磁极方向随机（本次转子反向爬一整圈=方向判定反的实证） */
 
 IFX_INTERRUPT(FOC_PWM_ISR, 0, 1);
 void FOC_PWM_ISR(void)
@@ -189,13 +191,15 @@ void FOC_PWM_ISR(void)
             g_el_prev_if = g_elec_angle;
             if (el_delta > PI) el_delta -= TWO_PI;
             if (el_delta < -PI) el_delta += TWO_PI;
-            if (dir_if * el_delta > 0.0f)
+            if (dir_if * el_delta > 0.001f)
             {
-                g_if_sync_cnt++;          /* 连续同步窗累加 */
+                g_if_sync_cnt++;          /* 连续同步窗累加（增量须 ≥0.001 rad/5ms=0.2 rad/s 电角） */
                 g_if_stall_cnt = 0;
             }
             else
             {
+                /* 失步/不动都算失败：微抖（|el_delta|≈0 正负摆动）若不设死区，
+                 * sync 时好时坏 → stall 计数被反复清零 → 翻 π 永远不触发 → I/f 卡死 */
                 g_if_sync_cnt = 0;
                 if (g_omega_i >= OMEGA_MAX) g_if_stall_cnt++;
             }
