@@ -56,6 +56,8 @@ static sint32 g_mech = 0;
 static uint16 g_lastEnc = 0;
 
 static volatile float32 g_id = 0, g_iq = 0, g_vd = 0, g_vq = 0;
+static volatile float32 g_id_filt = 0, g_iq_filt = 0;  /* 电流测量一阶低通：堵转大电流工况 duty 摆动致采样噪声大，
+                                                        * 20 倍电流环增益会放大成 vd/vq 饱和振荡，必须先滤波 */
 static volatile uint16 g_rawA = 0, g_rawB = 0;
 static float32 s_dA = 0.25f, s_dB = 0.25f, s_dC = 0.25f;
 
@@ -178,7 +180,8 @@ void FOC_PWM_ISR(void)
             g_sw_dbg = 1;
             g_sw_th = g_theta_i;
             g_sw_el = g_elec_angle;
-            g_dir_chk = 1;
+            g_dir_chk = 2;   /* I/f 方向已跟随旋钮 → 切闭环时方向已知，跳过方向确认窗，
+                              * 速度环/力矩预充立即接管（否则 iqr=-20 原地抖 2 秒等超时） */
             dir_t_start = g_isr_cnt;
         }
     }
@@ -207,14 +210,16 @@ void FOC_PWM_ISR(void)
 
     g_id = id;
     g_iq = iq;
+    g_id_filt = g_id_filt * 0.7f + id * 0.3f;
+    g_iq_filt = g_iq_filt * 0.7f + iq * 0.3f;
 
     float32 vd, vq, valpha, vbeta;
     if (g_kick)
     {
         /* 扫角脱困：d 轴控 0，q 轴恒定小电流给定（电流环限流，电压不会饱和超流），
          * 磁通随 g_sweep_angle 旋转，转子被磁场拉着逐步翻越齿槽 */
-        vd = PID_Calc(&g_pid_d, g_id_ref, id);
-        vq = PID_Calc(&g_pid_q, g_sweep_iq, iq);
+        vd = PID_Calc(&g_pid_d, g_id_ref, g_id_filt);
+        vq = PID_Calc(&g_pid_q, g_sweep_iq, g_iq_filt);
         valpha = vd * cos_e - vq * sin_e;
         vbeta  = vd * sin_e + vq * cos_e;
         g_vd = vd;
@@ -222,8 +227,8 @@ void FOC_PWM_ISR(void)
     }
     else
     {
-        vd = PID_Calc(&g_pid_d, g_id_ref, id);
-        vq = PID_Calc(&g_pid_q, g_iq_ref, iq);
+        vd = PID_Calc(&g_pid_d, g_id_ref, g_id_filt);
+        vq = PID_Calc(&g_pid_q, g_iq_ref, g_iq_filt);
         valpha = vd * cos_e - vq * sin_e;
         vbeta  = vd * sin_e + vq * cos_e;
         g_vd = vd;
