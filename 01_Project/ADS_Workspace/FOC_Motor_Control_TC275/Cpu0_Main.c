@@ -423,7 +423,16 @@ int core0_main(void)
             if (dt_s > 1e-4f && dt_s < 1.0f)
             {
                 float32 raw_speed = (float32)speed_delta_win / ENCODER_RESOLUTION * TWO_PI / dt_s;
-                g_speed_meas = g_speed_meas * 0.8f + raw_speed * 0.2f;
+                if (fabsf(raw_speed - g_speed_meas) > 2.0f)
+                {
+                    /* 单窗速度突变 >2 rad/s：切环强电流电磁噪声 → AS5047P 误读尖峰
+                     * （实测切环瞬间 spd 假值 +5430=54 rad/s → 速度环被假 spd 打飞 → 乱控 → 抖）
+                     * 保持旧值，尖峰被挡；正常运转相邻 5ms 速度变化 <0.05 rad/s，2 足够宽松 */
+                }
+                else
+                {
+                    g_speed_meas = g_speed_meas * 0.8f + raw_speed * 0.2f;
+                }
                 speed_updated = 1;
             }
             speed_delta_win = 0;
@@ -552,11 +561,12 @@ int core0_main(void)
                     speed_updated = 0;
                     continue;
                 }
-                /* 切环力矩 boost：100ms 1.15A 延续 I/f 拖动力矩冲过齿槽，
-                 * 防切环瞬间力矩骤降（iqr -20=0.23A<齿槽力矩）→ 转子失速卡死微摆 */
+                /* 切环力矩 boost：100ms 延续拖动力矩，防切环瞬间力矩骤降（iqr -20=0.23A<齿槽）失速。
+                 * 1.15A(-100) 曾致电磁噪声打飞编码器（spd 假值 +5430）→ 0.46A(-40) 温柔过渡：
+                 * 转子切环时已在 3.5 rad/s 惯性滑行，无需猛冲 */
                 if (g_boost_cnt > 0)
                 {
-                    g_iq_ref = (g_speed_ref < 0.0f) ? -100.0f : 100.0f;
+                    g_iq_ref = (g_speed_ref < 0.0f) ? -40.0f : 40.0f;
                     g_boost_cnt--;
                     g_spd_prev = g_speed_meas;
                     g_spd_ramp = g_speed_ref;
