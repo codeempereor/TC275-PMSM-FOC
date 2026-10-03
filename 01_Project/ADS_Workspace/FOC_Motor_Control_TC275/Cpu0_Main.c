@@ -443,9 +443,9 @@ int core0_main(void)
                  * 永远看到旧速度 → 刹不住 → 转子带着错误目标转飞） */
                 if (raw_speed > prev_spd + 2.0f) raw_speed = prev_spd + 2.0f;
                 else if (raw_speed < prev_spd - 2.0f) raw_speed = prev_spd - 2.0f;
-                g_speed_meas = prev_spd * 0.9f + raw_speed * 0.1f;   /* 低通 0.8/0.2→0.9/0.1：
-                                                                       * 稳定段测速噪声致 spd ±30%
-                                                                       * 波动(43e62b0 实测 -700~-1100) */
+                g_speed_meas = prev_spd * 0.92f + raw_speed * 0.08f;   /* 低通 0.9/0.1→0.92/0.08：
+                                                                       * 稳定段 spd ±15% 波动
+                                                                       * 再收一点(实测 -760~-1000) */
                 speed_updated = 1;
             }
             speed_delta_win = 0;
@@ -669,8 +669,9 @@ int core0_main(void)
                 /* 方向自检：spd 与 sref 明显反向且转子在转 → 参考系/磁极反 180° →
                  * iq 负产生正力矩（实测 b8efcb6 正转 5.7 圈）。检测到即翻转全部力矩输出，
                  * 转子被拉回正确方向，稳态自动维持（翻转不解除） */
-                if (g_speed_meas * g_speed_ref < -20.0f && fabsf(g_speed_meas) > 2.0f)
-                    g_dir_flip = 1;
+                if (g_speed_meas * g_speed_ref < -20.0f && fabsf(g_speed_meas) > 1.5f)
+                    g_dir_flip = 1;   /* 阈值 2.0→1.5：切环正冲 +316 约 0.3s(实测)，早 1 窗
+                                       * 翻转 → 正冲窗口更短，纠正更快 */
                 float32 new_iq;
                 /* 超速（同向超出目标 0.5）：纯比例强刹 + D 阻尼，防深负积分抵消刹车。
                  * 此前积分深负（-400，0.04×(-400)=-16）压过 Kp(+3) → 超速还加速 →
