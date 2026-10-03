@@ -524,10 +524,13 @@ int core0_main(void)
                 float32 err_speed = g_spd_ramp - g_speed_meas;
                 sint32 windup = (err_speed > 0.0f && g_iq_ref >= 149.0f) ||
                                (err_speed < 0.0f && g_iq_ref <= -149.0f);
-                if (!windup) speed_integral += err_speed;
-                if (speed_integral > 3000.0f) speed_integral = 3000.0f;
-                if (speed_integral < -3000.0f) speed_integral = -3000.0f;
-                float32 new_iq = 0.3f * err_speed + 0.05f * speed_integral;
+                /* 斜坡未到位前积分清零：启动爬坡段 err 一路负会累积负积分偏置，
+                 * 到达目标后 new_iq 仍为负 → 稳态速度被顶到 ~17 rad/s（目标 8）且排不掉 → 超速+卡顿 */
+                if (fabsf(g_spd_ramp - g_speed_ref) < 0.05f && !windup) speed_integral += err_speed;
+                else if (fabsf(g_spd_ramp - g_speed_ref) >= 0.05f) speed_integral = 0.0f;
+                if (speed_integral > 400.0f) speed_integral = 400.0f;
+                if (speed_integral < -400.0f) speed_integral = -400.0f;
+                float32 new_iq = 0.5f * err_speed + 0.04f * speed_integral;
 
                 /* 力矩预充：spd 跌到 0 附近且有给定 → 40ms 后直接满力矩冲齿槽。
                  * 速度环 Kp 项在静止起步时只有 ~0.07A，积分爬满需 >1s，齿槽等不及；
