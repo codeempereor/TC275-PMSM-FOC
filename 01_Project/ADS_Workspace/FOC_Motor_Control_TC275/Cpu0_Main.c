@@ -80,6 +80,10 @@ static float32 speed_integral = 0.0f;
 static sint32 speed_delta_win = 0;
 static uint32 speed_t_start = 0;
 static uint8 speed_updated = 0;
+static uint8 g_dir_flip = 0;        /* 磁极/参考系方向自检：切环瞬间 Park 参考系与转子
+                                     * 电角可能差 π(负载角/切环相位随机) → iq 负可能产生
+                                     * 正力矩(实测 42a18b6 负向 vs b8efcb6 正转 5.7 圈)。
+                                     * spd 与 sref 明显反向 → 磁极反 → iq 输出全部取反 */
 static volatile uint32 g_isr_cnt = 0;
 
 static volatile uint8  g_sw_dbg = 0;              /* 切换瞬间诊断快照 */
@@ -234,6 +238,7 @@ void FOC_PWM_ISR(void)
             g_sw_el = g_elec_angle;
             g_dir_chk = 2;   /* I/f 方向已跟随旋钮 → 切闭环时方向已知，跳过方向确认窗，
                               * 速度环/力矩预充立即接管（否则 iqr=-20 原地抖 2 秒等超时） */
+            g_dir_flip = 0;  /* 方向自检清零：切环后检测到反向再翻转 */
             g_spd_ramp = g_speed_ref;  /* 斜坡直接锁目标（不归零重爬）：boost 结束速度环首拍即稳态区 */
             g_boost_cnt = 20;          /* 切环力矩 boost：100ms 1.15A 冲出齿槽势阱（43e62b0
                                         * 验证 1.15A 是唯一够冲的力矩；100ms 减短正冲窗口） */
@@ -577,6 +582,7 @@ int core0_main(void)
                      * 同样方向错(正冲 +20.2)；冻结推不动；1.15A+实时 el 是唯一能转 4 圈的
                      * 组合(43e62b0)。噪声只在切环瞬间几 ms，之后编码器恢复干净 */
                     g_iq_ref = (g_speed_ref < 0.0f) ? -100.0f : 100.0f;
+                    if (g_dir_flip) g_iq_ref = -g_iq_ref;   /* 磁极反：boost 力矩同步取反 */
                     g_boost_cnt--;
                     g_spd_prev = g_speed_meas;
                     g_spd_ramp = g_speed_ref;
@@ -658,6 +664,11 @@ int core0_main(void)
                  * （spd ±400 交替、vq 恒 -500 饱和，0.2~0.4s 周期），无收敛 → "左右晃幅度大" */
                 float32 spd_delta = g_speed_meas - g_spd_prev;
                 g_spd_prev = g_speed_meas;
+                /* 方向自检：spd 与 sref 明显反向且转子在转 → 参考系/磁极反 180° →
+                 * iq 负产生正力矩（实测 b8efcb6 正转 5.7 圈）。检测到即翻转全部力矩输出，
+                 * 转子被拉回正确方向，稳态自动维持（翻转不解除） */
+                if (g_speed_meas * g_speed_ref < -20.0f && fabsf(g_speed_meas) > 2.0f)
+                    g_dir_flip = 1;
                 float32 new_iq;
                 /* 超速（同向超出目标 0.5）：纯比例强刹 + D 阻尼，防深负积分抵消刹车。
                  * 此前积分深负（-400，0.04×(-400)=-16）压过 Kp(+3) → 超速还加速 →
@@ -699,6 +710,8 @@ int core0_main(void)
                     g_torq_pump_cnt = 0;
                 }
 
+                if (g_dir_flip) new_iq = -new_iq;   /* 磁极反：速度环/预充输出统一取反 →
+                                                     * 力矩反向 → 转子拉回正确方向 */
                 float32 dq = new_iq - g_iq_ref;
                 if (dq > 30.0f) dq = 30.0f;
                 if (dq < -30.0f) dq = -30.0f;
