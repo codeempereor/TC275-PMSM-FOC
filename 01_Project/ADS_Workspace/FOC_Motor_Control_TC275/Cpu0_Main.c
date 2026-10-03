@@ -235,7 +235,7 @@ void FOC_PWM_ISR(void)
             g_dir_chk = 2;   /* I/f 方向已跟随旋钮 → 切闭环时方向已知，跳过方向确认窗，
                               * 速度环/力矩预充立即接管（否则 iqr=-20 原地抖 2 秒等超时） */
             g_spd_ramp = g_speed_ref;  /* 斜坡直接锁目标（不归零重爬）：boost 结束速度环首拍即稳态区 */
-            g_boost_cnt = 20;          /* 切环力矩 boost：100ms 1.15A 延续 I/f 拖动力矩冲过齿槽，
+            g_boost_cnt = 30;          /* 切环力矩 boost：150ms 1.15A 冲出齿槽势阱，
                                         * 防切环瞬间力矩骤降（iqr -20 起步=0.23A<齿槽）→ 卡死微摆 */
             dir_t_start = g_isr_cnt;
         }
@@ -565,12 +565,13 @@ int core0_main(void)
                     speed_updated = 0;
                     continue;
                 }
-                /* 切环力矩 boost：100ms 延续拖动力矩，防切环瞬间力矩骤降（iqr -20=0.23A<齿槽）失速。
-                 * 1.15A(-100) 曾致电磁噪声打飞编码器（spd 假值 +5430）→ 0.46A(-40) 温柔过渡：
-                 * 转子切环时已在 3.5 rad/s 惯性滑行，无需猛冲 */
+                /* 切环力矩 boost：150ms 延续拖动力矩，防切环瞬间力矩骤降（iqr -20=0.23A<齿槽）失速。
+                 * 1.15A(-100) 曾致电磁噪声打飞编码器（spd 假值 +5430）→ 降 0.46A 温柔过渡；
+                 * 但 0.46A 在齿槽谷底势阱位推不动（实测转子 1 rad/s 起步蠕动 0.17 rad 卡停）→
+                 * 恢复 1.15A + 延长 150ms 冲出势阱。编码器增量钳位 ±800 已兜住打飞风险 */
                 if (g_boost_cnt > 0)
                 {
-                    g_iq_ref = (g_speed_ref < 0.0f) ? -40.0f : 40.0f;
+                    g_iq_ref = (g_speed_ref < 0.0f) ? -100.0f : 100.0f;
                     g_boost_cnt--;
                     g_spd_prev = g_speed_meas;
                     g_spd_ramp = g_speed_ref;
