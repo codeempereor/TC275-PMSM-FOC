@@ -317,8 +317,11 @@ int core0_main(void)
     FOC_UART_PrintInt((sint32)zero_offset);
     FOC_UART_Print("\r\n");
 
-    PID_Init(&g_pid_d, 0.0005f, 0.0002f, 0.0f, 0.2f);  /* vd 限幅 0.2：防电压矢量被拉偏致卡死 */
-    PID_Init(&g_pid_q, 0.0005f, 0.0002f, 0.0f, 0.5f);
+    /* 电流环：Kp=0.01/Ki=0.001（高带宽，1 码=0.0115A → 150 码误差立即输出 1.5V 饱和电压，
+     * 大电流参考 ~1.7A 可在 ~1ms 内建立）。旧 Kp=0.0005 时大电流误差输出仅 0.075V、
+     * 积分爬满才 0.2V → 1.7A 参考永远建立不起来 → 堵转时力矩≈0 → 电机"滋滋声抖动但不转" */
+    PID_Init(&g_pid_d, 0.01f, 0.001f, 0.0f, 0.5f);
+    PID_Init(&g_pid_q, 0.01f, 0.001f, 0.0f, 0.5f);
     g_id_ref = 0.0f;
     g_iq_ref = -50.0f;
 
