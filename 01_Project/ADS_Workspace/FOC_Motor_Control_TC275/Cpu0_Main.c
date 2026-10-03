@@ -84,7 +84,7 @@ static uint16 g_stall_cnt = 0;                 /* 堵转连续窗计数 */
 static uint8  g_kick_fail = 0;                 /* 连续冲击失败次数 */
 static volatile float32 s_duty_hi = 0.45f;     /* 动态 duty 上限，kick 时放宽到 0.9 */
 #define STALL_SPD_LIM  0.5f    /* 堵转判定：|spd|<0.5 rad/s */
-#define STALL_SREF_MIN 2.0f    /* 堵转判定：|sref|>2 rad/s 才判（回零不算堵） */
+#define STALL_SREF_MIN 0.5f    /* 堵转判定：|sref|>0.5 rad/s 才判（仅挡零位；低速给定同样需要脱困） */
 #define STALL_WINDOWS  40      /* 持续 200ms 判堵转 */
 #define KICK_WINDOWS   40      /* 冲击 200ms：长时间推力累积角动量冲出齿槽 */
 #define KICK_VOLTAGE   1.0f    /* 冲击电压：满调制（duty 上限 0.95 → 相电压约 13V） */
