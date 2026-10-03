@@ -75,7 +75,9 @@ static uint32 g_if_sync_cnt = 0;    /* 连续同步窗口数（≥8 才允许切
 static uint32 g_if_stall_cnt = 0;   /* 同步失败连续窗口数（≥20 → 磁极反，翻 π 重试） */
 static uint32 g_if_flip_cnt = 0;    /* 翻 π 重试次数（限 3） */
 static uint32 g_ovspd_cnt = 0;      /* 闭环超速失控窗口计数（≥20 → 停机翻 π 重启） */
-static uint32 g_boost_cnt = 0;      /* 切环力矩 boost 剩余主循环窗数：100ms 1.15A 延续拖动力矩 */
+static uint32 g_boost_cnt = 0;      /* 切环力矩 boost 剩余主循环窗数：150ms 1.15A 冲出齿槽 */
+static float32 g_boost_angle = 0.0f; /* boost 窗口冻结的 Park 参考系：防大力矩在切环瞬间
+                                       * 编码器噪声窗口打乱方向（实测 1.15A 把转子推正转 +19.9） */
 static float32 speed_integral = 0.0f;
 static sint32 speed_delta_win = 0;
 static uint32 speed_t_start = 0;
@@ -237,6 +239,8 @@ void FOC_PWM_ISR(void)
             g_spd_ramp = g_speed_ref;  /* 斜坡直接锁目标（不归零重爬）：boost 结束速度环首拍即稳态区 */
             g_boost_cnt = 30;          /* 切环力矩 boost：150ms 1.15A 冲出齿槽势阱，
                                         * 防切环瞬间力矩骤降（iqr -20 起步=0.23A<齿槽）→ 卡死微摆 */
+            g_boost_angle = g_elec_angle;  /* 冻结 boost 参考系：I/f 方向已确定，
+                                            * 用切环时刻角度保证 -100 力矩方向恒定 */
             dir_t_start = g_isr_cnt;
         }
         else if (g_omega_i >= OMEGA_MAX && g_if_stall_cnt >= 20 && g_if_flip_cnt < 3)
@@ -571,6 +575,9 @@ int core0_main(void)
                  * 恢复 1.15A + 延长 150ms 冲出势阱。编码器增量钳位 ±800 已兜住打飞风险 */
                 if (g_boost_cnt > 0)
                 {
+                    g_elec_angle = g_boost_angle;   /* Park 参考系冻结：150ms 内 iq=-100
+                                                     * 方向恒定 → 确定方向冲出齿槽（实测不
+                                                     * 冻结时 1.15A 在噪声窗口把转子推正转 +19.9） */
                     g_iq_ref = (g_speed_ref < 0.0f) ? -100.0f : 100.0f;
                     g_boost_cnt--;
                     g_spd_prev = g_speed_meas;
