@@ -71,8 +71,12 @@ void FOC_ADC_Init(void)
     chCfg.resultRegister = IfxVadc_ChannelResult_5;
     IfxVadc_Adc_initChannel(&s_chC, &chCfg);
 
-    /* 仅扫描电流通道 5/6/7 */
-    uint32 channelMask = (1 << 5) | (1 << 6) | (1 << 7);
+    /* 仅扫描电流通道 6/7（A/B 两相，C 相在主 ISR 重构 ic=-(ia+ib)）：
+     * 去掉通道 5 使三相顺序转换变两相 → 转换时间减 1/3 → 高 duty 下
+     * 低侧分流窗口（duty 0.80 → 4us）内容纳得下转换（2 通道 ~1.2-2us）。
+     * 旧 mask 含 5/6/7：第三通道白白转换 0.6-1us → duty 0.45 窗口 13.75us
+     * 无感，但 duty 放开后窗口收窄即采样出界（历史 0.9 失效根因）。 */
+    uint32 channelMask = (1 << 6) | (1 << 7);
     IfxVadc_Adc_setScan(&s_group4, channelMask, channelMask);
 
     IfxVadc_Adc_startScan(&s_group4);

@@ -60,6 +60,9 @@ static volatile float32 g_id_filt = 0, g_iq_filt = 0;  /* 电流测量一阶低�
                                                         * 20 倍电流环增益会放大成 vd/vq 饱和振荡，必须先滤波 */
 static volatile uint16 g_rawA = 0, g_rawB = 0;
 static float32 s_dA = 0.25f, s_dB = 0.25f, s_dC = 0.25f;
+static volatile uint16 g_smp_bad_cnt = 0;   /* 采样超限连续窗计数（保护触发 100 窗） */
+static volatile uint16 g_smp_ok_cnt = 0;    /* 保护后正常窗计数（恢复 200 窗） */
+static volatile uint8  g_smp_prot = 0;      /* 采样保护锁存：1 → duty 上限降 0.45 */
 
 static volatile float32 g_speed_ref = 0.0f;     /* 目标转速 机械rad/s（旋钮给定），负=逆时针，打印×100 */
 static float32 g_speed_ref_filt = 0.0f;         /* sref 低通滤波，防旋钮跳变 */
@@ -127,7 +130,24 @@ static uint16 g_pole_chk_cnt = 0;              /* 磁极方向自检连续窗计
 #define KICK_FAIL_MAX  3       /* 连续失败 3 次 → 冷却 2 秒自动重试（无需回零） */
 #define FAIL_COOL_WINDOWS 400  /* 冷却窗 = 400×5ms = 2s */
 #define BASE_SPEED     8.0f    /* 旋钮 0% 基础转速 rad/s（≈76 RPM，闭环稳定区起步） */
-#define MAX_SPEED      12.0f   /* 旋钮 100% 顶速 rad/s（duty 0.45 电压极限） */
+#define MAX_SPEED      12.0f   /* 旋钮 100% 顶速 rad/s（duty 0.80 电压 19.2V，EMF 余量充足） */
+
+/* === 架构改造（duty 0.45→0.80 + 采样保护）2026-10-03 ===
+ * 根因：DRV8305 低侧分流采样，采样点在 PWM 周期端点（T12 OneMatch @ 0us，
+ * 低侧导通窗口起点）。duty 0.45 窗口 13.75us 三相采样安全；duty 放开后窗口
+ * 收窄（0.80→4us、0.90→1.5us）→ 三相转换(~2us)出窗口 → C 相失效。
+ * 改造：①ADC 只扫 A/B 两相（C 重构）→ 转换时间减 1/3；
+ *       ②duty 上限 0.45→0.80（窗口 4us，两相转换 ~1.2-2us 安全余量 2us）；
+ *       ③电压标幺 0.5→0.80（PID outMax 同步）→ 电流环不再饱和 → 齿槽
+ *         扰动被压住 → 转速恒定；
+ *       ④采样原始值范围保护：raw 持续超限 500ms → 自动降 duty 至 0.45 +
+ *         UART 告警，恢复 1s 后自动复原（防高 duty 采样失效失控，兜底）。 */
+#define DUTY_MAX       0.80f   /* duty 钳位上限（低侧窗口 4us，两相采样安全值） */
+#define VOLT_MAX       0.80f   /* 电流环电压标幺上限（PID outMax，SVPWM duty 同步） */
+#define RAW_LIM_HI     3500    /* 采样 raw 合理上限（2048±1548，超限=采样失效） */
+#define RAW_LIM_LO     500     /* 采样 raw 合理下限 */
+#define SMP_BAD_WIN    100     /* 连续 100 窗(500ms) 采样超限 → 降级保护 */
+#define SMP_REC_WIN    200     /* 保护后连续 200 窗(1s) 正常 → 自动恢复 */
 
 static volatile uint8  g_foc_mode = 0;   /* 0=预定位 1=开环加速 2=闭环 */
 static volatile float32 g_theta_i = 0.0f;
@@ -135,8 +155,9 @@ static volatile float32 g_omega_i = 0.0f;
 static volatile uint16 g_prepos_cnt = 0;
 #define I_START      200.0f   /* 预定位强拉电流(码, 2.3A)：定位必须足强克服齿槽 → 磁极方向唯一 */
 #define IF_ID        130.0f   /* I/f 拖动力矩(码, 1.5A)：150 时转子跟上磁场(7.5 vs 8.5) ✓
-                               * 但电压需求高 → duty 拉向 0.45 边界 → 固定中点采样失效(尖峰)。
-                               * 130 电压需求降 → duty 居中 → 采样改善 → 抖动减小 */
+                               * 旧架构(duty 0.45)电压需求高 → duty 顶 0.45 边界 → 采样失效(尖峰)，
+                               * 故取 130 居中。新架构(duty 0.80+两相采样)电压余量大 →
+                               * 150 不再顶边界，130 保守保持（启动相关，非本次改造点） */
 #define OMEGA_MIN    2.0f     /* 起始电频率 rad/s */
 #define OMEGA_MAX    20.0f    /* 切换电频率 rad/s (≈2 机械 rad/s)：35(3.5) 超 V/f 开环拖动
                                * 同步能力——实测 vd=0.7V 转子稳定 2 rad/s 连续转 6.7 圈但磁场
@@ -332,9 +353,10 @@ void FOC_PWM_ISR(void)
     float32 dutyA, dutyB, dutyC;
     FOC_SVPWM(valpha, vbeta, &dutyA, &dutyB, &dutyC);
 
-    if (dutyA > 0.45f) dutyA = 0.45f; if (dutyA < 0.05f) dutyA = 0.05f;
-    if (dutyB > 0.45f) dutyB = 0.45f; if (dutyB < 0.05f) dutyB = 0.05f;
-    if (dutyC > 0.45f) dutyC = 0.45f; if (dutyC < 0.05f) dutyC = 0.05f;
+    float32 duty_max = g_smp_prot ? 0.45f : DUTY_MAX;   /* 采样保护触发 → 降回 0.45 安全区 */
+    if (dutyA > duty_max) dutyA = duty_max; if (dutyA < 0.05f) dutyA = 0.05f;
+    if (dutyB > duty_max) dutyB = duty_max; if (dutyB < 0.05f) dutyB = 0.05f;
+    if (dutyC > duty_max) dutyC = duty_max; if (dutyC < 0.05f) dutyC = 0.05f;
 
     s_dA = dutyA; s_dB = dutyB; s_dC = dutyC;
 
@@ -419,8 +441,8 @@ int core0_main(void)
     /* 电流环：Kp=0.01/Ki=0.001（高带宽，1 码=0.0115A → 150 码误差立即输出 1.5V 饱和电压，
      * 大电流参考 ~1.7A 可在 ~1ms 内建立）。旧 Kp=0.0005 时大电流误差输出仅 0.075V、
      * 积分爬满才 0.2V → 1.7A 参考永远建立不起来 → 堵转时力矩≈0 → 电机"滋滋声抖动但不转" */
-    PID_Init(&g_pid_d, 0.01f, 0.001f, 0.0f, 0.5f);
-    PID_Init(&g_pid_q, 0.01f, 0.001f, 0.0f, 0.5f);
+    PID_Init(&g_pid_d, 0.01f, 0.001f, 0.0f, VOLT_MAX);
+    PID_Init(&g_pid_q, 0.01f, 0.001f, 0.0f, VOLT_MAX);
     g_id_ref = 0.0f;
     g_iq_ref = -50.0f;
 
@@ -464,6 +486,34 @@ int core0_main(void)
             }
             speed_delta_win = 0;
             speed_t_start = g_isr_cnt;
+        }
+
+        /* 采样质量保护（每窗 5ms 检查）：raw 超限 = 采样失效（低侧窗口出界/ADC 错位）。
+         * 持续 500ms → duty 上限降回 0.45（ISR 读 g_smp_prot 生效）+ 串口告警；
+         * 恢复正常 1s → 自动复原。防高 duty 放开后偶发采样失效失控。 */
+        if (g_rawA > RAW_LIM_HI || g_rawA < RAW_LIM_LO ||
+            g_rawB > RAW_LIM_HI || g_rawB < RAW_LIM_LO)
+        {
+            g_smp_bad_cnt++;
+            g_smp_ok_cnt = 0;
+            if (g_smp_bad_cnt >= SMP_BAD_WIN && !g_smp_prot)
+            {
+                g_smp_prot = 1;
+                FOC_UART_Print("\r\nSMP_PROT duty->0.45\r\n");
+            }
+        }
+        else
+        {
+            if (g_smp_bad_cnt > 0) g_smp_bad_cnt--;
+            if (g_smp_prot)
+            {
+                if (++g_smp_ok_cnt >= SMP_REC_WIN)
+                {
+                    g_smp_ok_cnt = 0;
+                    g_smp_prot = 0;
+                    FOC_UART_Print("\r\nSMP_REC duty->0.80\r\n");
+                }
+            }
         }
 
         if (g_dir_chk == 1)
