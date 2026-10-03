@@ -95,7 +95,7 @@ static uint16 g_pole_chk_cnt = 0;              /* 磁极方向自检连续窗计
 #define STALL_SREF_MIN 0.5f    /* 有给定（仅挡零位） */
 #define STALL_WINDOWS  40      /* 持续 200ms 判堵转 */
 #define LOW_SPD_MAX    4.0f    /* 低速区上限：|sref|<4 rad/s 直接开环拖动（平滑起步） */
-#define SWEEP_SPD      3.0f    /* 堵转脱困扫角速度（电 rad/s，慢速翻齿槽） */
+#define SWEEP_SPD      1.5f    /* 堵转脱困扫角速度（电 rad/s，慢速翻齿槽，转子跟随无滑差） */
 #define SWEEP_RAMP     100.0f  /* 低速拖动加速斜坡 rad/s²（0→目标电转速平滑） */
 #define SWEEP_ANG_MAX  6.283f  /* 最大扫过 2π 电角（36° 机械，必翻越齿槽） */
 #define SWEEP_IREF     130.0f  /* 拖动/脱困 q 电流 ≈1.5A（3A 电源内） */
@@ -111,7 +111,7 @@ static volatile float32 g_omega_i = 0.0f;
 static volatile uint16 g_prepos_cnt = 0;
 #define I_START      200.0f   /* 启动电流幅值(码, 2.3A) */
 #define OMEGA_MIN    2.0f     /* 起始电频率 rad/s */
-#define OMEGA_MAX    60.0f    /* 切换电频率 rad/s (≈1rev/s 机械) */
+#define OMEGA_MAX    85.0f    /* 切换电频率 rad/s (≈8.5 机械 rad/s，直接到工作点上方，启动段无堵转) */
 #define OMEGA_RAMP   100.0f   /* 频率斜坡 rad/s² */
 #define PREPOS_SAMPLES 6000   /* 预定位 200ms 斜坡 + 100ms 稳定 (20kHz) */
 
@@ -504,8 +504,8 @@ int core0_main(void)
                 if (speed_integral < -3000.0f) speed_integral = -3000.0f;
                 float32 new_iq = 0.8f * err_speed + 0.08f * speed_integral;
                 float32 dq = new_iq - g_iq_ref;
-                if (dq > 8.0f) dq = 8.0f;
-                if (dq < -8.0f) dq = -8.0f;
+                if (dq > 30.0f) dq = 30.0f;
+                if (dq < -30.0f) dq = -30.0f;
                 g_iq_ref += dq;
                 if (g_iq_ref > 150.0f) g_iq_ref = 150.0f;
                 if (g_iq_ref < -150.0f) g_iq_ref = -150.0f;
@@ -557,7 +557,7 @@ int core0_main(void)
             FOC_UART_Print(" ra="); FOC_UART_PrintInt((sint32)g_rawA);
             FOC_UART_Print(" rb="); FOC_UART_PrintInt((sint32)g_rawB);
             FOC_UART_Print(" spd="); FOC_UART_PrintInt((sint32)(g_speed_meas * 100.0f));
-            FOC_UART_Print(" iqr="); FOC_UART_PrintInt((sint32)g_iq_ref);
+            FOC_UART_Print(" iqr="); FOC_UART_PrintInt((sint32)(g_kick ? g_sweep_iq : g_iq_ref));
             FOC_UART_Print(" sref="); FOC_UART_PrintInt((sint32)(g_speed_ref * 100.0f));
             FOC_UART_Print(" pot="); FOC_UART_PrintInt((sint32)g_pot_raw);
             FOC_UART_Print(" k="); FOC_UART_PrintInt((sint32)g_kick);
