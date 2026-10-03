@@ -169,8 +169,12 @@ void FOC_PWM_ISR(void)
         {
             g_foc_mode = 2;
             g_id_ref = 0.0f;
-            g_iq_ref = -130.0f;   /* 切闭环瞬间直接给 1.5A 力矩：d 轴电流撤掉后电机不掉速，
-                                   * 方向确认窗期间保持转速，速度环接管后平滑收敛 */
+            g_iq_ref = -20.0f;   /* 切闭环直接给稳态力矩（0.23A）：I/f 8.5 → 目标 8 只需微减速，
+                                  * 不经过转速零点 → 不卡齿槽。任何高于稳态的初值回落时都会拉崩转速 */
+            /* 积分器预充：让速度环首拍输出 ≈ -20，力矩无缝交接 */
+            speed_integral = (g_iq_ref - 0.8f * (g_speed_ref - g_speed_meas)) / 0.08f;
+            if (speed_integral > 3000.0f) speed_integral = 3000.0f;
+            if (speed_integral < -3000.0f) speed_integral = -3000.0f;
             g_sw_dbg = 1;
             g_sw_th = g_theta_i;
             g_sw_el = g_elec_angle;
