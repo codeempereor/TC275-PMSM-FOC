@@ -90,6 +90,7 @@ static uint8  g_sweep_mode = 0;                /* 0=低速拖动 1=堵转脱困 
 static uint16 g_stall_cnt = 0;                 /* 堵转连续窗计数 */
 static uint8  g_kick_fail = 0;                 /* 连续失败次数 */
 static uint16 g_fail_cool_cnt = 0;             /* 失败冷却窗计数（自动重试） */
+static uint16 g_pole_chk_cnt = 0;              /* 磁极方向自检连续窗计数 */
 #define STALL_SPD_LIM  0.5f    /* 堵转判定：|spd|<0.5 rad/s */
 #define STALL_SREF_MIN 0.5f    /* 有给定（仅挡零位） */
 #define STALL_WINDOWS  40      /* 持续 200ms 判堵转 */
@@ -473,13 +474,21 @@ int core0_main(void)
                     speed_updated = 0;
                     continue;
                 }
-                if (g_speed_meas * g_speed_ref < -30.0f && fabsf(g_speed_meas) > 3.0f)
+                /* 磁极方向自检（防误翻）：反向且 |spd|>6 持续 20 窗(100ms)才判定磁极反，
+                 * 否则中速齿槽爬行时 spd 瞬时反向抖动会误翻 π → 方向横跳"中速顺时针/高速逆时针" */
+                if (g_speed_meas * g_speed_ref < -80.0f && fabsf(g_speed_meas) > 6.0f)
                 {
-                    g_mech += (sint32)ENCODER_RESOLUTION / MOTOR_POLE_PAIRS / 2;  /* 磁极反 → 翻 π */
-                    speed_integral = 0.0f;
-                    g_iq_ref = -50.0f;
-                    speed_updated = 0;
-                    continue;
+                    if (++g_pole_chk_cnt >= 20)
+                    {
+                        g_pole_chk_cnt = 0;
+                        g_mech += (sint32)ENCODER_RESOLUTION / MOTOR_POLE_PAIRS / 2;  /* 磁极反 → 翻 π */
+                        speed_integral = 0.0f;
+                        g_iq_ref = -50.0f;
+                    }
+                }
+                else
+                {
+                    g_pole_chk_cnt = 0;
                 }
                 float32 err_speed = g_speed_ref - g_speed_meas;
                 sint32 windup = (err_speed > 0.0f && g_iq_ref >= 149.0f) ||
