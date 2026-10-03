@@ -42,6 +42,7 @@ static inline float fast_cos(float x)
 
 volatile uint8   g_running = 0;
 volatile float32 g_elec_angle = 0.0f;
+static float32 g_elec_angle_prev = 0.0f;
 
 static PID_t g_pid_d;
 static PID_t g_pid_q;
@@ -297,7 +298,7 @@ void FOC_PWM_ISR(void)
          * 开环：转子不动时反电动势≈0 → 电流 (0.5-Rs)/R≈1.7A 足力矩拖动；
          * 转子转起后反电动势升 → 电流自动回落（天然恒流）→ 可靠拖动。
          * vq=0 无 iq 扰动（iq 环追 0 会被采样尖峰打飞 → 抖） */
-        vd = (g_foc_mode == 1) ? 0.5f : PID_Calc(&g_pid_d, g_id_ref, g_id_filt);
+        vd = (g_foc_mode == 1) ? 0.7f : PID_Calc(&g_pid_d, g_id_ref, g_id_filt);
         vq = (g_foc_mode == 1) ? 0.0f : PID_Calc(&g_pid_q, g_iq_ref, g_iq_filt);
         valpha = vd * cos_e - vq * sin_e;
         vbeta  = vd * sin_e + vq * cos_e;
@@ -424,6 +425,12 @@ int core0_main(void)
         g_mech += delta;
         speed_delta_win += delta;
         g_elec_angle = (float32)g_mech * TWO_PI / ENCODER_RESOLUTION * (float32)MOTOR_POLE_PAIRS;
+        /* 角度连续性校验：相邻主循环电角变化 >0.8 rad（=8 机械 rad/s 的电角速度，
+         * 正常 8-12 rad/s 时 5ms 变化 0.4-0.6 rad）→ 判切环瞬间电磁噪声连续误读
+         * （多窗小跳累计实测假跳 +118k 电毫rad=18.8 圈/0.7s）→ 保持旧角。
+         * 增量过滤(>800码)只挡单帧大跳，挡不住多窗累计；此校验两者互补 */
+        if (fabsf(g_elec_angle - g_elec_angle_prev) > 0.8f) g_elec_angle = g_elec_angle_prev;
+        g_elec_angle_prev = g_elec_angle;
 
         if (g_isr_cnt - speed_t_start >= 100)   /* 100 ISR = 5ms @20kHz */
         {
@@ -664,7 +671,7 @@ int core0_main(void)
                 }
                 else
                 {
-                    new_iq = 1.0f * err_speed + 0.04f * speed_integral - 0.3f * spd_delta;
+                    new_iq = 2.0f * err_speed + 0.08f * speed_integral - 0.3f * spd_delta;
                 }
 
                 /* 力矩预充：spd 跌到 0 附近且有给定 → 40ms 后满力矩冲齿槽。
