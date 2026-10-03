@@ -117,7 +117,9 @@ static volatile uint16 g_prepos_cnt = 0;
 #define I_START      200.0f   /* 启动电流幅值(码, 2.3A) */
 #define OMEGA_MIN    2.0f     /* 起始电频率 rad/s */
 #define OMEGA_MAX    85.0f    /* 切换电频率 rad/s (≈8.5 机械 rad/s，直接到工作点上方，启动段无堵转) */
-#define OMEGA_RAMP   100.0f   /* 频率斜坡 rad/s² */
+#define OMEGA_RAMP   25.0f    /* 频率斜坡 rad/s²（3.4s 到 85）：云台电机惯量大，
+                               * 100 rad/s² 加速过快会丢步（转子没跟上就切闭环→启动全靠预充→
+                               * 预充冲出过头→速度环刹车过头→走走停停→卡死） */
 #define PREPOS_SAMPLES 6000   /* 预定位 200ms 斜坡 + 100ms 稳定 (20kHz) */
 
 IFX_INTERRUPT(FOC_PWM_ISR, 0, 1);
@@ -169,14 +171,14 @@ void FOC_PWM_ISR(void)
         float32 err = g_theta_i - g_elec_angle;
         while (err > PI) err -= TWO_PI;
         while (err < -PI) err += TWO_PI;
-        if (g_omega_i >= OMEGA_MAX && fabsf(err) < 0.3f)
+        if (g_omega_i >= OMEGA_MAX && fabsf(err) < 0.3f && fabsf(g_speed_meas) > 5.0f)
         {
             g_foc_mode = 2;
             g_id_ref = 0.0f;
             g_iq_ref = -20.0f;   /* 切闭环直接给稳态力矩（0.23A）：I/f 8.5 → 目标 8 只需微减速，
                                   * 不经过转速零点 → 不卡齿槽。任何高于稳态的初值回落时都会拉崩转速 */
-            /* 积分器预充：让速度环首拍输出 ≈ -20，力矩无缝交接 */
-            speed_integral = (g_iq_ref - 0.8f * (g_speed_ref - g_speed_meas)) / 0.08f;
+            /* 积分器预充：让速度环首拍输出 ≈ -20，力矩无缝交接（Kp=0.5/Ki=0.04 同步） */
+            speed_integral = (g_iq_ref - 0.5f * (g_speed_ref - g_speed_meas)) / 0.04f;
             if (speed_integral > 3000.0f) speed_integral = 3000.0f;
             if (speed_integral < -3000.0f) speed_integral = -3000.0f;
             g_sw_dbg = 1;
@@ -515,11 +517,11 @@ int core0_main(void)
                 {
                     g_pole_chk_cnt = 0;
                 }
-                /* 速度环目标斜坡：每 5ms 爬 0.1 rad/s（20 rad/s²），目标 8 需 0.4s。
+                /* 速度环目标斜坡：每 5ms 爬 0.15 rad/s（30 rad/s²），目标 8 需 0.27s。
                  * 启动时误差始终小 → 力矩温和 → 不过冲不反向振荡 */
                 float32 ramp_delta = g_speed_ref - g_spd_ramp;
-                if (ramp_delta > 0.1f) g_spd_ramp += 0.1f;
-                else if (ramp_delta < -0.1f) g_spd_ramp -= 0.1f;
+                if (ramp_delta > 0.15f) g_spd_ramp += 0.15f;
+                else if (ramp_delta < -0.15f) g_spd_ramp -= 0.15f;
                 else g_spd_ramp = g_speed_ref;
                 float32 err_speed = g_spd_ramp - g_speed_meas;
                 sint32 windup = (err_speed > 0.0f && g_iq_ref >= 149.0f) ||
@@ -532,15 +534,17 @@ int core0_main(void)
                 if (speed_integral < -400.0f) speed_integral = -400.0f;
                 float32 new_iq = 0.5f * err_speed + 0.04f * speed_integral;
 
-                /* 力矩预充：spd 跌到 0 附近且有给定 → 40ms 后直接满力矩冲齿槽。
+                /* 力矩预充：spd 跌到 0 附近且有给定 → 40ms 后满力矩冲齿槽。
                  * 速度环 Kp 项在静止起步时只有 ~0.07A，积分爬满需 >1s，齿槽等不及；
-                 * 预充让起步/偶发堵转瞬间就有 1.7A，冲出后速度环立即接管 */
+                 * 预充让起步/偶发堵转瞬间就有大电流，冲出后速度环立即接管。
+                 * -100(1.15A) 而非 -150：冲出柔和，冲到 ~8-10 速度环接得住；
+                 * -150 会冲到 13+ rad/s（超目标 8），速度环斜坡还没爬到就被迫猛刹 → 走走停停 */
                 if (fabsf(g_speed_meas) < 2.0f && fabsf(g_speed_ref) >= LOW_SPD_MAX
                     && g_kick_fail < KICK_FAIL_MAX)
                 {
                     if (++g_torq_pump_cnt >= 8)
                     {
-                        new_iq = (g_speed_ref < 0.0f) ? -150.0f : 150.0f;
+                        new_iq = (g_speed_ref < 0.0f) ? -100.0f : 100.0f;
                     }
                 }
                 else
