@@ -590,7 +590,7 @@ int core0_main(void)
         }
 
         print_cnt++;
-        if (print_cnt >= 500)
+        if (print_cnt >= 2000)   /* 每 2000 次主循环 ≈100ms/行，降串口负载防助手崩溃（原 500≈25ms/行） */
         {
             print_cnt = 0;
             FOC_UART_Print("md="); FOC_UART_PrintInt((sint32)g_foc_mode);
