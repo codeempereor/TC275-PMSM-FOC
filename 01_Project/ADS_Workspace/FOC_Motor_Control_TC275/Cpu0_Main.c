@@ -157,7 +157,9 @@ void FOC_PWM_ISR(void)
     {
         g_omega_i += OMEGA_RAMP * 0.00005f;
         if (g_omega_i > OMEGA_MAX) g_omega_i = OMEGA_MAX;
-        g_theta_i += g_omega_i * 0.00005f;
+        float32 dir_if = (g_speed_ref < 0.0f) ? -1.0f : 1.0f;   /* I/f 启动方向跟随旋钮给定：
+                                                                * 切闭环后速度环方向一致，无反向掰转速的堵转 */
+        g_theta_i += dir_if * g_omega_i * 0.00005f;
         g_iq_ref = 0.0f;
         float32 err = g_theta_i - g_elec_angle;
         while (err > PI) err -= TWO_PI;
@@ -166,7 +168,8 @@ void FOC_PWM_ISR(void)
         {
             g_foc_mode = 2;
             g_id_ref = 0.0f;
-            g_iq_ref = -50.0f;
+            g_iq_ref = -130.0f;   /* 切闭环瞬间直接给 1.5A 力矩：d 轴电流撤掉后电机不掉速，
+                                   * 方向确认窗期间保持转速，速度环接管后平滑收敛 */
             g_sw_dbg = 1;
             g_sw_th = g_theta_i;
             g_sw_el = g_elec_angle;
