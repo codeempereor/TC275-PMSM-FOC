@@ -411,7 +411,11 @@ int core0_main(void)
         sint32 delta = (sint32)enc_raw - (sint32)g_lastEnc;
         if (delta > (sint32)ENCODER_RESOLUTION / 2) delta -= (sint32)ENCODER_RESOLUTION;
         if (delta < -(sint32)ENCODER_RESOLUTION / 2) delta += (sint32)ENCODER_RESOLUTION;
-        if (delta > 4096 || delta < -4096)   /* 坏帧过滤：单次位置跳变超限丢弃 */
+        if (delta > 800 || delta < -800)   /* 坏帧过滤：单次位置跳变 >800 码(0.05圈)丢弃。
+                                            * 4096 太宽挡不住切环瞬间电磁噪声误读——
+                                            * 实测切环后 ang 假跳 +37k 电毫rad(5.9圈/0.5s 不可能)
+                                            * → 速度环看到假正转 → 假刹车 → 转子被刹停 → 齿槽锁死抖。
+                                            * 正常：8rad/s≈104码/5ms、12rad/s≈156码/5ms，800 足够宽松 */
         {
             g_lastEnc = enc_raw;
             continue;
