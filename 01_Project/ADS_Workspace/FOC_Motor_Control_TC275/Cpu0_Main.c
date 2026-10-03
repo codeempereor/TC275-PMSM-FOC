@@ -108,6 +108,8 @@ static uint16 g_stall_cnt = 0;                 /* 堵转连续窗计数 */
 static uint16 g_torq_pump_cnt = 0;             /* 力矩预充连续窗计数（起步/堵转瞬间满力矩冲齿槽） */
 static uint8  g_kick_fail = 0;                 /* 连续失败次数 */
 static uint16 g_fail_cool_cnt = 0;             /* 失败冷却窗计数（自动重试） */
+static uint16 g_kick_timer = 0;                /* 堵转直推计时：1.7A 垂直直推 2s(400 窗)
+                                               * 转子仍不动 → 失败冷却重试（超强齿槽物理极限） */
 static uint16 g_pole_chk_cnt = 0;              /* 磁极方向自检连续窗计数 */
 #define STALL_SPD_LIM  0.5f    /* 堵转判定：|spd|<0.5 rad/s */
 #define STALL_SREF_MIN 0.5f    /* 有给定（仅挡零位） */
@@ -271,9 +273,17 @@ void FOC_PWM_ISR(void)
             float32 tgt = fabsf(g_speed_ref) * (float32)MOTOR_POLE_PAIRS;
             g_sweep_spd += SWEEP_RAMP * 0.00005f;
             if (g_sweep_spd > tgt) g_sweep_spd = tgt;
+            g_sweep_angle += g_sweep_dir * g_sweep_spd * 0.00005f;  /* 开环磁通旋转 */
+            ang_use = g_sweep_angle;
         }
-        g_sweep_angle += g_sweep_dir * g_sweep_spd * 0.00005f;  /* 开环磁通旋转 */
-        ang_use = g_sweep_angle;
+        else
+        {
+            /* 堵转脱困 → 编码器定向直推：Park 锁定编码器实时角（垂直转子）+ iq=±SWEEP_IREF
+             * = 最大冲出力矩。磁场旋转扫角在超强齿槽位无效（实测 641a8a1：磁场转 7.5 电rad
+             * 转子 3s 不动 -6128→-6638）——转子不动时磁场力臂斜、有效推力小；
+             * 编码器定向始终垂直转子 → 1.7A 全程最大推力，转子一动（spd>2）闭环接管 */
+            ang_use = g_elec_angle;
+        }
     }
     else
     {
@@ -540,7 +550,8 @@ int core0_main(void)
                         g_sweep_iq = (g_speed_ref < 0.0f) ? -SWEEP_IREF : SWEEP_IREF;
                         g_sweep_dir = (g_speed_ref < 0.0f) ? -1.0f : 1.0f;
                     }
-                    else if (swept >= SWEEP_ANG_MAX)
+                    else if (++g_kick_timer >= 400)   /* 直推 2s 转子仍不动 → 超强齿槽，
+                                                       * 1.7A 是单相上限 → 失败冷却重试 */
                     {
                         g_kick = 0;
                         g_spd_ramp = g_speed_ref;
@@ -743,6 +754,7 @@ int core0_main(void)
                         g_sweep_dir = (g_speed_ref < 0.0f) ? -1.0f : 1.0f;
                         g_sweep_iq = (g_speed_ref < 0.0f) ? -SWEEP_IREF : SWEEP_IREF;
                         g_sweep_spd = SWEEP_SPD;
+                        g_kick_timer = 0;
                         speed_integral = 0.0f;
                     }
                 }
