@@ -89,6 +89,7 @@ static float32 g_sweep_spd  = 0.0f;            /* 当前开环电角速度 rad/s
 static uint8  g_sweep_mode = 0;                /* 0=低速拖动 1=堵转脱困 */
 static uint16 g_stall_cnt = 0;                 /* 堵转连续窗计数 */
 static uint8  g_kick_fail = 0;                 /* 连续失败次数 */
+static uint16 g_fail_cool_cnt = 0;             /* 失败冷却窗计数（自动重试） */
 #define STALL_SPD_LIM  0.5f    /* 堵转判定：|spd|<0.5 rad/s */
 #define STALL_SREF_MIN 0.5f    /* 有给定（仅挡零位） */
 #define STALL_WINDOWS  40      /* 持续 200ms 判堵转 */
@@ -98,7 +99,8 @@ static uint8  g_kick_fail = 0;                 /* 连续失败次数 */
 #define SWEEP_ANG_MAX  6.283f  /* 最大扫过 2π 电角（36° 机械，必翻越齿槽） */
 #define SWEEP_IREF     130.0f  /* 拖动/脱困 q 电流 ≈1.5A（3A 电源内） */
 #define SWEEP_EXIT_SPD 0.5f    /* 脱困成功判定：转子动起来 */
-#define KICK_FAIL_MAX  3       /* 连续失败 3 次停止，降 iq=-50 冷却，旋钮回零复位 */
+#define KICK_FAIL_MAX  3       /* 连续失败 3 次 → 冷却 2 秒自动重试（无需回零） */
+#define FAIL_COOL_WINDOWS 400  /* 冷却窗 = 400×5ms = 2s */
 
 static volatile uint8  g_foc_mode = 0;   /* 0=预定位 1=开环加速 2=闭环 */
 static volatile float32 g_theta_i = 0.0f;
@@ -391,6 +393,7 @@ int core0_main(void)
                     {
                         g_kick = 0;
                         g_kick_fail = 0;   /* 升到中高速切闭环 / 旋钮回零 */
+                        g_fail_cool_cnt = 0;
                     }
                     else if (fabsf(g_speed_meas) < 0.3f && swept >= SWEEP_ANG_MAX)
                     {
@@ -408,6 +411,7 @@ int core0_main(void)
                     {
                         g_kick = 0;
                         g_kick_fail = 0;   /* 脱困成功：转子动起来，闭环接管 */
+                        g_fail_cool_cnt = 0;
                     }
                     else if (fabsf(g_speed_ref) < LOW_SPD_MAX && fabsf(g_speed_ref) > 0.5f)
                     {
@@ -436,6 +440,23 @@ int core0_main(void)
             }
             else
             {
+                /* 失败冷却：3 次脱困失败 → 静置 2 秒自动清零重试（无需旋钮回零） */
+                if (g_kick_fail >= KICK_FAIL_MAX)
+                {
+                    if (fabsf(g_speed_ref) < 0.5f)
+                    {
+                        g_kick_fail = 0;   /* 旋钮回零立即复位 */
+                        g_iq_ref = 0.0f;
+                    }
+                    else if (++g_fail_cool_cnt >= FAIL_COOL_WINDOWS)
+                    {
+                        g_fail_cool_cnt = 0;
+                        g_kick_fail = 0;   /* 冷却完成：自动重试 */
+                        g_iq_ref = 0.0f;
+                    }
+                    speed_updated = 0;
+                    continue;
+                }
                 /* 低速区（0.5<|sref|<LOW_SPD_MAX）：直接开环拖动起步——磁场斜坡加速，
                  * 恒定电流拖着转子平滑转，替代速度环（低速速度环会在齿槽间振荡） */
                 if (fabsf(g_speed_ref) < LOW_SPD_MAX && fabsf(g_speed_ref) > STALL_SREF_MIN
