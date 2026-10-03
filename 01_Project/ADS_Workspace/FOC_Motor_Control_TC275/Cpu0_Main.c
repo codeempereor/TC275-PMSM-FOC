@@ -128,9 +128,10 @@ static volatile uint16 g_prepos_cnt = 0;
                                * 但电压需求高 → duty 拉向 0.45 边界 → 固定中点采样失效(尖峰)。
                                * 130 电压需求降 → duty 居中 → 采样改善 → 抖动减小 */
 #define OMEGA_MIN    2.0f     /* 起始电频率 rad/s */
-#define OMEGA_MAX    35.0f    /* 切换电频率 rad/s (≈3.5 机械 rad/s)：85(8.5) 太快，
-                              * id~0.8A 励磁拖不动 → 转子 11 圈后丢步 → 停住摆动(±1.5rad 来回)。
-                              * 35 拖动力矩需求低 → 转子跟随 → 切环后速度环斜坡 1.7s 爬到 8 */
+#define OMEGA_MAX    20.0f    /* 切换电频率 rad/s (≈2 机械 rad/s)：35(3.5) 超 V/f 开环拖动
+                               * 同步能力——实测 vd=0.7V 转子稳定 2 rad/s 连续转 6.7 圈但磁场
+                               * 3.5 追不上 → 失步 → sync 永远凑不齐 → 永不切环("只有1没有2")。
+                               * 20=转子实测同步速度 → V/f 同步 → sync 累计 → 切环 → 闭环爬 8 */
 #define OMEGA_RAMP   25.0f    /* 频率斜坡 rad/s²（3.4s 到 85）：云台电机惯量大，
                                * 100 rad/s² 加速过快会丢步（转子没跟上就切闭环→启动全靠预充→
                                * 预充冲出过头→速度环刹车过头→走走停停→卡死） */
@@ -211,10 +212,10 @@ void FOC_PWM_ISR(void)
                 g_if_stall_cnt++;
             }
         }
-        if (g_omega_i >= OMEGA_MAX && fabsf(err) < 0.3f && fabsf(g_speed_meas) > 2.0f
+        if (g_omega_i >= OMEGA_MAX && fabsf(err) < 0.3f && fabsf(g_speed_meas) > 1.0f
             && g_if_sync_cnt >= 20)   /* 累计 ≥20 个同步窗(100ms)即可切：转子方向确认+超速看门狗兜底，
                                        * 不再要求连续 8 窗（抖动会清零导致死锁）。
-                                       * |spd|>2 而非 >5：OMEGA_MAX=35 时转子最高 3.5，>5 永不满足 */
+                                       * |spd|>1.0 而非 >2：OMEGA_MAX=20 时转子最高 2，>2 边缘不稳 */
         {
             g_foc_mode = 2;
             g_id_ref = 0.0f;
