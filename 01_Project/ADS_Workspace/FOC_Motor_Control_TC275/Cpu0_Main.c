@@ -199,19 +199,19 @@ void FOC_PWM_ISR(void)
             if (el_delta < -PI) el_delta += TWO_PI;
             if (dir_if * el_delta > 0.001f)
             {
-                g_if_sync_cnt++;          /* 连续同步窗累加（增量须 ≥0.001 rad/5ms=0.2 rad/s 电角） */
+                if (g_if_sync_cnt < 50) g_if_sync_cnt++;   /* 累计制：抖动时偶发反向不再清零，
+                                                            * 否则连续 8 窗永远凑不齐 → 切环死锁
+                                                            * （实测转子在转但 22s 不切环，一直开环抖） */
                 g_if_stall_cnt = 0;
             }
-            else
+            else if (g_omega_i >= OMEGA_MAX)
             {
-                /* 失步/不动都算失败：微抖（|el_delta|≈0 正负摆动）若不设死区，
-                 * sync 时好时坏 → stall 计数被反复清零 → 翻 π 永远不触发 → I/f 卡死 */
-                g_if_sync_cnt = 0;
-                if (g_omega_i >= OMEGA_MAX) g_if_stall_cnt++;
+                g_if_stall_cnt++;
             }
         }
         if (g_omega_i >= OMEGA_MAX && fabsf(err) < 0.3f && fabsf(g_speed_meas) > 5.0f
-            && g_if_sync_cnt >= 8)   /* 最近 40ms 连续同步才切：转子真沿磁场方向转，杜绝失步带病切换 */
+            && g_if_sync_cnt >= 20)   /* 累计 ≥20 个同步窗(100ms)即可切：转子方向确认+超速看门狗兜底，
+                                       * 不再要求连续 8 窗（抖动会清零导致死锁） */
         {
             g_foc_mode = 2;
             g_id_ref = 0.0f;
@@ -289,7 +289,9 @@ void FOC_PWM_ISR(void)
     else
     {
         vd = PID_Calc(&g_pid_d, g_id_ref, g_id_filt);
-        vq = PID_Calc(&g_pid_q, g_iq_ref, g_iq_filt);
+        /* I/f 段 vq 硬冻结 0：iq 环追 0 时被采样尖峰打飞（实测 vq ±500 饱和乱打 → 电机抖）。
+         * 励磁 id 环继续闭环 → 拖动力矩稳定；vq=0 无 iq 扰动 → 磁场平滑旋转 */
+        vq = (g_foc_mode == 1) ? 0.0f : PID_Calc(&g_pid_q, g_iq_ref, g_iq_filt);
         valpha = vd * cos_e - vq * sin_e;
         vbeta  = vd * sin_e + vq * cos_e;
         g_vd = vd;
