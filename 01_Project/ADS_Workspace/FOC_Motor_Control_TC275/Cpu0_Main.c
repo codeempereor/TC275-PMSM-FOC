@@ -75,6 +75,7 @@ static uint32 g_if_sync_cnt = 0;    /* 连续同步窗口数（≥8 才允许切
 static uint32 g_if_stall_cnt = 0;   /* 同步失败连续窗口数（≥20 → 磁极反，翻 π 重试） */
 static uint32 g_if_flip_cnt = 0;    /* 翻 π 重试次数（限 3） */
 static uint32 g_ovspd_cnt = 0;      /* 闭环超速失控窗口计数（≥20 → 停机翻 π 重启） */
+static uint32 g_boost_cnt = 0;      /* 切环力矩 boost 剩余主循环窗数：100ms 1.15A 延续拖动力矩 */
 static float32 speed_integral = 0.0f;
 static sint32 speed_delta_win = 0;
 static uint32 speed_t_start = 0;
@@ -122,7 +123,10 @@ static volatile uint8  g_foc_mode = 0;   /* 0=预定位 1=开环加速 2=闭环 
 static volatile float32 g_theta_i = 0.0f;
 static volatile float32 g_omega_i = 0.0f;
 static volatile uint16 g_prepos_cnt = 0;
-#define I_START      200.0f   /* 启动电流幅值(码, 2.3A) */
+#define I_START      200.0f   /* 预定位强拉电流(码, 2.3A)：定位必须足强克服齿槽 → 磁极方向唯一 */
+#define IF_ID        150.0f   /* I/f 拖动力矩(码, 1.7A)：200 目标时 vd 恒饱和(实测 id 只建立~80=0.9A)，
+                               * 励磁弱 → 转子丢步(磁场 8.5 只跟到 0.9) → 切环后力矩骤降卡齿槽。
+                               * 150 目标 vd 进入线性区 → 电流实际建立 → 拖动力矩提升 ~90% */
 #define OMEGA_MIN    2.0f     /* 起始电频率 rad/s */
 #define OMEGA_MAX    85.0f    /* 切换电频率 rad/s (≈8.5 机械 rad/s，直接到工作点上方，启动段无堵转) */
 #define OMEGA_RAMP   25.0f    /* 频率斜坡 rad/s²（3.4s 到 85）：云台电机惯量大，
@@ -178,6 +182,8 @@ void FOC_PWM_ISR(void)
                                                                 * 切闭环后速度环方向一致，无反向掰转速的堵转 */
         g_theta_i += dir_if * g_omega_i * 0.00005f;
         g_iq_ref = 0.0f;
+        g_id_ref = IF_ID;   /* I/f 励磁 1.7A：200 会 vd 饱和电流建立不足（拖动力矩弱 → 丢步），
+                             * 150 进线性区电流实际建立 */
         float32 err = g_theta_i - g_elec_angle;
         while (err > PI) err -= TWO_PI;
         while (err < -PI) err += TWO_PI;
@@ -222,7 +228,9 @@ void FOC_PWM_ISR(void)
             g_sw_el = g_elec_angle;
             g_dir_chk = 2;   /* I/f 方向已跟随旋钮 → 切闭环时方向已知，跳过方向确认窗，
                               * 速度环/力矩预充立即接管（否则 iqr=-20 原地抖 2 秒等超时） */
-            g_spd_ramp = 0.0f;  /* 目标斜坡归零，闭环后平滑爬升，不一步到 -8 */
+            g_spd_ramp = g_speed_ref;  /* 斜坡直接锁目标（不归零重爬）：boost 结束速度环首拍即稳态区 */
+            g_boost_cnt = 20;          /* 切环力矩 boost：100ms 1.15A 延续 I/f 拖动力矩冲过齿槽，
+                                        * 防切环瞬间力矩骤降（iqr -20 起步=0.23A<齿槽）→ 卡死微摆 */
             dir_t_start = g_isr_cnt;
         }
         else if (g_omega_i >= OMEGA_MAX && g_if_stall_cnt >= 20 && g_if_flip_cnt < 3)
@@ -534,6 +542,17 @@ int core0_main(void)
                         g_kick_fail = 0;   /* 冷却完成：自动重试 */
                         g_iq_ref = 0.0f;
                     }
+                    speed_updated = 0;
+                    continue;
+                }
+                /* 切环力矩 boost：100ms 1.15A 延续 I/f 拖动力矩冲过齿槽，
+                 * 防切环瞬间力矩骤降（iqr -20=0.23A<齿槽力矩）→ 转子失速卡死微摆 */
+                if (g_boost_cnt > 0)
+                {
+                    g_iq_ref = (g_speed_ref < 0.0f) ? -100.0f : 100.0f;
+                    g_boost_cnt--;
+                    g_spd_prev = g_speed_meas;
+                    g_spd_ramp = g_speed_ref;
                     speed_updated = 0;
                     continue;
                 }
