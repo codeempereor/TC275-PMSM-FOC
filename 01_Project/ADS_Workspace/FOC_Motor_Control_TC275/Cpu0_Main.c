@@ -88,6 +88,7 @@ static float32 g_sweep_iq   = 0.0f;            /* q 电流给定（码值，限�
 static float32 g_sweep_spd  = 0.0f;            /* 当前开环电角速度 rad/s */
 static uint8  g_sweep_mode = 0;                /* 0=低速拖动 1=堵转脱困 */
 static uint16 g_stall_cnt = 0;                 /* 堵转连续窗计数 */
+static uint16 g_torq_pump_cnt = 0;             /* 力矩预充连续窗计数（起步/堵转瞬间满力矩冲齿槽） */
 static uint8  g_kick_fail = 0;                 /* 连续失败次数 */
 static uint16 g_fail_cool_cnt = 0;             /* 失败冷却窗计数（自动重试） */
 static uint16 g_pole_chk_cnt = 0;              /* 磁极方向自检连续窗计数 */
@@ -506,6 +507,23 @@ int core0_main(void)
                 if (speed_integral > 3000.0f) speed_integral = 3000.0f;
                 if (speed_integral < -3000.0f) speed_integral = -3000.0f;
                 float32 new_iq = 0.8f * err_speed + 0.08f * speed_integral;
+
+                /* 力矩预充：spd 跌到 0 附近且有给定 → 40ms 后直接满力矩冲齿槽。
+                 * 速度环 Kp 项在静止起步时只有 ~0.07A，积分爬满需 >1s，齿槽等不及；
+                 * 预充让起步/偶发堵转瞬间就有 1.7A，冲出后速度环立即接管 */
+                if (fabsf(g_speed_meas) < 2.0f && fabsf(g_speed_ref) >= LOW_SPD_MAX
+                    && g_kick_fail < KICK_FAIL_MAX)
+                {
+                    if (++g_torq_pump_cnt >= 8)
+                    {
+                        new_iq = (g_speed_ref < 0.0f) ? -150.0f : 150.0f;
+                    }
+                }
+                else
+                {
+                    g_torq_pump_cnt = 0;
+                }
+
                 float32 dq = new_iq - g_iq_ref;
                 if (dq > 30.0f) dq = 30.0f;
                 if (dq < -30.0f) dq = -30.0f;
