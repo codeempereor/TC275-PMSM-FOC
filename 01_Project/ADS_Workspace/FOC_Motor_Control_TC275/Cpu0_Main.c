@@ -212,10 +212,12 @@ void FOC_PWM_ISR(void)
                 g_if_stall_cnt++;
             }
         }
-        if (g_omega_i >= OMEGA_MAX && fabsf(err) < 0.3f && fabsf(g_speed_meas) > 1.0f
-            && g_if_sync_cnt >= 20)   /* 累计 ≥20 个同步窗(100ms)即可切：转子方向确认+超速看门狗兜底，
-                                       * 不再要求连续 8 窗（抖动会清零导致死锁）。
-                                       * |spd|>1.0 而非 >2：OMEGA_MAX=20 时转子最高 2，>2 边缘不稳 */
+        /* 切环：sync≥20(100ms 方向确认)即切。去掉 err<0.3 与 spd>1.0 两个判据——
+         * ①err=θ_i-el 在 V/f 同步态=负载角，实测常 >0.3 → 永不满足 → 永不切环；
+         * ②spd 由 5ms 编码器增量测出，转子 2 rad/s 时窗内仅 ~26 码，噪声使
+         * 读数频繁 <1.0 → 同样永卡。sync 累计本身已证明转子同步且在转，
+         * 是唯一可靠判据；切环有 boost+预充+ramp 锁目标保护过渡 */
+        if (g_omega_i >= OMEGA_MAX && g_if_sync_cnt >= 20)
         {
             g_foc_mode = 2;
             g_id_ref = 0.0f;
