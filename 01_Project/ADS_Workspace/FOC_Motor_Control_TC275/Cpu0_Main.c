@@ -113,7 +113,9 @@ static uint16 g_pole_chk_cnt = 0;              /* 磁极方向自检连续窗计
 #define STALL_SREF_MIN 0.5f    /* 有给定（仅挡零位） */
 #define STALL_WINDOWS  40      /* 持续 200ms 判堵转 */
 #define LOW_SPD_MAX    4.0f    /* 低速区上限：|sref|<4 rad/s 直接开环拖动（平滑起步） */
-#define SWEEP_SPD      1.5f    /* 堵转脱困扫角速度（电 rad/s，慢速翻齿槽，转子跟随无滑差） */
+#define SWEEP_SPD      2.5f    /* 堵转脱困扫角速度（电 rad/s）：1.5 慢速扫角 1.5A 在最强
+                                * 齿槽位推不动(实测 -854k 位 iqr+100 卡)；2.5 转子惯性能量
+                                * ∝v² → 冲过强齿槽，扫角后速度环接管 */
 #define SWEEP_RAMP     100.0f  /* 低速拖动加速斜坡 rad/s²（0→目标电转速平滑） */
 #define SWEEP_ANG_MAX  6.283f  /* 最大扫过 2π 电角（36° 机械，必翻越齿槽） */
 #define SWEEP_IREF     130.0f  /* 拖动/脱困 q 电流 ≈1.5A（3A 电源内） */
@@ -680,13 +682,15 @@ int core0_main(void)
                 }
                 else
                 {
-                    new_iq = 2.0f * err_speed + 0.08f * speed_integral - 0.3f * spd_delta
+                    new_iq = 1.0f * err_speed + 0.08f * speed_integral - 0.3f * spd_delta
                            + g_speed_ref * 6.0f;   /* 稳态前馈维持力矩：云台齿槽力矩随位置
                                                     * 大幅变化(0.3~1A+ 等效)——sref×2.75(-22
                                                     * 码 0.25A)只在弱齿槽位维持住，硬位掉速停
                                                     * (实测 -16.4k/-1390k/-140k 摆)。sref=-8
                                                     * → -48 码 0.55A 覆盖中弱齿槽；超速分支
-                                                    * 保持纯 P 刹，前馈不干扰刹车 */
+                                                    * 保持纯 P 刹，前馈不干扰刹车。
+                                                    * Kp 2.0→1.0：方向翻转后 spd -800~-1600
+                                                    * 振荡(实测)系增益过高过冲 */
                 }
 
                 /* 力矩预充：spd 跌到 0 附近且有给定 → 40ms 后满力矩冲齿槽。
