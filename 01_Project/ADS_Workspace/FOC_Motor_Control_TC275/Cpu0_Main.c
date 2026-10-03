@@ -422,10 +422,12 @@ int core0_main(void)
                         g_kick = 0;
                         g_kick_fail = 0;   /* 升到中高速切闭环 / 旋钮回零 */
                         g_fail_cool_cnt = 0;
+                        g_spd_ramp = g_speed_ref;  /* 斜坡锁定目标，防从 0 重爬丢力矩 */
                     }
                     else if (fabsf(g_speed_meas) < 0.3f && swept >= SWEEP_ANG_MAX)
                     {
                         g_kick = 0;   /* 磁场转完 2π 转子没跟 → 拖不动（负载过重） */
+                        g_spd_ramp = g_speed_ref;
                         if (++g_kick_fail >= KICK_FAIL_MAX)
                         {
                             g_kick_fail = KICK_FAIL_MAX;
@@ -440,6 +442,8 @@ int core0_main(void)
                         g_kick = 0;
                         g_kick_fail = 0;   /* 脱困成功：转子动起来，闭环接管 */
                         g_fail_cool_cnt = 0;
+                        g_spd_ramp = g_speed_ref;  /* 斜坡直接锁定目标：防退出后从 0 重爬，
+                                                    * 积分清零+力矩丢失 → 又掉回爬行-卡死循环 */
                     }
                     else if (fabsf(g_speed_ref) < LOW_SPD_MAX && fabsf(g_speed_ref) > 0.5f)
                     {
@@ -452,6 +456,7 @@ int core0_main(void)
                     else if (swept >= SWEEP_ANG_MAX)
                     {
                         g_kick = 0;
+                        g_spd_ramp = g_speed_ref;
                         if (++g_kick_fail >= KICK_FAIL_MAX)
                         {
                             g_kick_fail = KICK_FAIL_MAX;
@@ -462,6 +467,7 @@ int core0_main(void)
                     {
                         g_kick = 0;
                         g_kick_fail = 0;   /* 旋钮回零 */
+                        g_spd_ramp = g_speed_ref;
                     }
                 }
                 speed_updated = 0;
