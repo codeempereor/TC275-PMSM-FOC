@@ -244,8 +244,10 @@ void FOC_PWM_ISR(void)
                               * 速度环/力矩预充立即接管（否则 iqr=-20 原地抖 2 秒等超时） */
             g_dir_flip = 0;  /* 方向自检清零：切环后检测到反向再翻转 */
             g_spd_ramp = g_speed_ref;  /* 斜坡直接锁目标（不归零重爬）：boost 结束速度环首拍即稳态区 */
-            g_boost_cnt = 20;          /* 切环力矩 boost：100ms 1.15A 冲出齿槽势阱（43e62b0
-                                        * 验证 1.15A 是唯一够冲的力矩；100ms 减短正冲窗口） */
+            g_boost_cnt = 40;          /* 切环力矩 boost：200ms 1.15A 冲出齿槽势阱。43e62b0
+                                        * 验证 1.15A 是唯一够冲的力矩；100ms 在强齿槽切环位
+                                        * (实测 -6047 位)冲不出 → 扫角接管启动延迟 ~3s；
+                                        * 200ms 冲量翻倍强位也能冲出，最差不劣化 */
             dir_t_start = g_isr_cnt;
         }
         else if (g_omega_i >= OMEGA_MAX && g_if_stall_cnt >= 20 && g_if_flip_cnt < 3)
