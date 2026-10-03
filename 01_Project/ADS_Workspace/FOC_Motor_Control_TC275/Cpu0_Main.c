@@ -42,7 +42,6 @@ static inline float fast_cos(float x)
 
 volatile uint8   g_running = 0;
 volatile float32 g_elec_angle = 0.0f;
-static float32 g_elec_angle_prev = 0.0f;
 
 static PID_t g_pid_d;
 static PID_t g_pid_q;
@@ -412,25 +411,15 @@ int core0_main(void)
         sint32 delta = (sint32)enc_raw - (sint32)g_lastEnc;
         if (delta > (sint32)ENCODER_RESOLUTION / 2) delta -= (sint32)ENCODER_RESOLUTION;
         if (delta < -(sint32)ENCODER_RESOLUTION / 2) delta += (sint32)ENCODER_RESOLUTION;
-        if (delta > 800 || delta < -800)   /* 坏帧过滤：单次位置跳变 >800 码(0.05圈)丢弃。
-                                            * 4096 太宽挡不住切环瞬间电磁噪声误读——
-                                            * 实测切环后 ang 假跳 +37k 电毫rad(5.9圈/0.5s 不可能)
-                                            * → 速度环看到假正转 → 假刹车 → 转子被刹停 → 齿槽锁死抖。
-                                            * 正常：8rad/s≈104码/5ms、12rad/s≈156码/5ms，800 足够宽松 */
-        {
-            g_lastEnc = enc_raw;
-            continue;
-        }
+        if (delta > 800) delta = 800;   /* 单窗增量钳位（±800 码=0.05圈）：切环瞬间电磁噪声
+                                         * 误读大跳被钳成小假值——丢弃会冻结 g_mech（角度卡死），
+                                         * 钳位让真实运动(<800码/窗)不受影响、假角度有限、
+                                         * spd 计算同源被钳 → 速度环不被假值打飞 */
+        else if (delta < -800) delta = -800;
         g_lastEnc = enc_raw;
         g_mech += delta;
         speed_delta_win += delta;
         g_elec_angle = (float32)g_mech * TWO_PI / ENCODER_RESOLUTION * (float32)MOTOR_POLE_PAIRS;
-        /* 角度连续性校验：相邻主循环电角变化 >0.8 rad（=8 机械 rad/s 的电角速度，
-         * 正常 8-12 rad/s 时 5ms 变化 0.4-0.6 rad）→ 判切环瞬间电磁噪声连续误读
-         * （多窗小跳累计实测假跳 +118k 电毫rad=18.8 圈/0.7s）→ 保持旧角。
-         * 增量过滤(>800码)只挡单帧大跳，挡不住多窗累计；此校验两者互补 */
-        if (fabsf(g_elec_angle - g_elec_angle_prev) > 0.8f) g_elec_angle = g_elec_angle_prev;
-        g_elec_angle_prev = g_elec_angle;
 
         if (g_isr_cnt - speed_t_start >= 100)   /* 100 ISR = 5ms @20kHz */
         {
