@@ -77,19 +77,22 @@ static volatile uint8 g_dir_chk = 0;              /* 磁极方向确认：0=未�
 static sint32 dir_accum = 0;
 static volatile uint32 dir_t_start = 0;
 
-/* 堵转脱困（方案A：电压开环冲击 kick） */
-static volatile uint8  g_kick = 0;             /* 1=冲击中 */
-static uint16 g_kick_cnt = 0;                  /* 冲击剩余窗数(5ms) */
+/* 堵转脱困（方案C：扫角——开环缓慢旋转磁通，低电流拉着转子翻越齿槽，3A 电源友好） */
+static volatile uint8  g_kick = 0;             /* 1=扫角脱困中 */
+static float32 g_sweep_angle = 0.0f;           /* 扫角当前电角度（开环） */
+static float32 g_sweep_start = 0.0f;           /* 扫角起始电角度 */
+static float32 g_sweep_dir  = 0.0f;            /* 扫角方向 ±1（跟随 sref） */
+static float32 g_sweep_iq   = 0.0f;            /* 扫角 q 电流给定（码值，限流） */
 static uint16 g_stall_cnt = 0;                 /* 堵转连续窗计数 */
-static uint8  g_kick_fail = 0;                 /* 连续冲击失败次数 */
-static volatile float32 s_duty_hi = 0.45f;     /* 动态 duty 上限，kick 时放宽到 0.9 */
+static uint8  g_kick_fail = 0;                 /* 连续脱困失败次数 */
 #define STALL_SPD_LIM  0.5f    /* 堵转判定：|spd|<0.5 rad/s */
 #define STALL_SREF_MIN 0.5f    /* 堵转判定：|sref|>0.5 rad/s 才判（仅挡零位；低速给定同样需要脱困） */
 #define STALL_WINDOWS  40      /* 持续 200ms 判堵转 */
-#define KICK_WINDOWS   40      /* 冲击 200ms：长时间推力累积角动量冲出齿槽 */
-#define KICK_VOLTAGE   1.0f    /* 冲击电压：满调制（duty 上限 0.95 → 相电压约 13V） */
-#define KICK_SPD_EXIT  2.0f    /* 冲击成功判定：spd>2 rad/s */
-#define KICK_FAIL_MAX  3       /* 连续失败 3 次停止冲击，防持续大电流 */
+#define SWEEP_SPD      3.0f    /* 扫角电角速度 rad/s（≈0.3 机械 rad/s，转子同步跟随） */
+#define SWEEP_ANG_MAX  6.283f  /* 最大扫过 2π 电角（36° 机械，必翻越至少一个齿槽） */
+#define SWEEP_IREF     80.0f   /* 扫角 q 电流给定 ≈0.9A（电压由电流环限制，不超 3A 电源） */
+#define SWEEP_EXIT_SPD 0.5f    /* 转子动起来即成功退出 */
+#define KICK_FAIL_MAX  3       /* 连续失败 3 次停止扫角，降 iq=-50 冷却，旋钮回零复位 */
 
 static volatile uint8  g_foc_mode = 0;   /* 0=预定位 1=开环加速 2=闭环 */
 static volatile float32 g_theta_i = 0.0f;
@@ -161,7 +164,16 @@ void FOC_PWM_ISR(void)
         }
     }
 
-    float32 ang_use = (g_foc_mode == 2) ? g_elec_angle : g_theta_i;
+    float32 ang_use;
+    if (g_kick)
+    {
+        g_sweep_angle += g_sweep_dir * SWEEP_SPD * 0.00005f;  /* 开环磁通旋转：拉着转子翻越齿槽 */
+        ang_use = g_sweep_angle;
+    }
+    else
+    {
+        ang_use = (g_foc_mode == 2) ? g_elec_angle : g_theta_i;
+    }
     float32 sin_e = -sinf(ang_use);
     float32 cos_e =  cosf(ang_use);
     float32 id  =  ialpha * cos_e + ibeta * sin_e;
@@ -173,9 +185,10 @@ void FOC_PWM_ISR(void)
     float32 vd, vq, valpha, vbeta;
     if (g_kick)
     {
-        /* 堵转脱困：电压开环冲击（不闭环，采样失效无碍），方向跟随 sref */
-        vd = 0.0f;
-        vq = (g_speed_ref < 0.0f) ? -KICK_VOLTAGE : KICK_VOLTAGE;
+        /* 扫角脱困：d 轴控 0，q 轴恒定小电流给定（电流环限流，电压不会饱和超流），
+         * 磁通随 g_sweep_angle 旋转，转子被磁场拉着逐步翻越齿槽 */
+        vd = PID_Calc(&g_pid_d, g_id_ref, id);
+        vq = PID_Calc(&g_pid_q, g_sweep_iq, iq);
         valpha = vd * cos_e - vq * sin_e;
         vbeta  = vd * sin_e + vq * cos_e;
         g_vd = vd;
@@ -194,9 +207,9 @@ void FOC_PWM_ISR(void)
     float32 dutyA, dutyB, dutyC;
     FOC_SVPWM(valpha, vbeta, &dutyA, &dutyB, &dutyC);
 
-    if (dutyA > s_duty_hi) dutyA = s_duty_hi; if (dutyA < 0.05f) dutyA = 0.05f;
-    if (dutyB > s_duty_hi) dutyB = s_duty_hi; if (dutyB < 0.05f) dutyB = 0.05f;
-    if (dutyC > s_duty_hi) dutyC = s_duty_hi; if (dutyC < 0.05f) dutyC = 0.05f;
+    if (dutyA > 0.45f) dutyA = 0.45f; if (dutyA < 0.05f) dutyA = 0.05f;
+    if (dutyB > 0.45f) dutyB = 0.45f; if (dutyB < 0.05f) dutyB = 0.05f;
+    if (dutyC > 0.45f) dutyC = 0.45f; if (dutyC < 0.05f) dutyC = 0.05f;
 
     s_dA = dutyA; s_dB = dutyB; s_dC = dutyC;
 
@@ -356,23 +369,27 @@ int core0_main(void)
         {
             if (g_kick)
             {
-                /* 冲击进行中：每 5ms 检查一次，转起来/超时/旋钮回零即退出 */
+                /* 扫角进行中：每 5ms 检查一次——转子动起来=成功；扫完 2π 未动=失败；旋钮回零=复位 */
                 speed_integral = 0.0f;
-                if (--g_kick_cnt == 0)
+                float32 swept = fabsf(g_sweep_angle - g_sweep_start);
+                if (fabsf(g_speed_meas) > SWEEP_EXIT_SPD)
                 {
                     g_kick = 0;
-                    s_duty_hi = 0.45f;
+                    g_kick_fail = 0;   /* 脱困成功：失败计数清零 */
+                }
+                else if (swept >= SWEEP_ANG_MAX)
+                {
+                    g_kick = 0;
                     if (++g_kick_fail >= KICK_FAIL_MAX)
                     {
                         g_kick_fail = KICK_FAIL_MAX;
                         g_iq_ref = -50.0f;   /* 3次失败：降回低力矩等待（防持续大电流发热），旋钮回零后复位 */
                     }
                 }
-                else if (fabsf(g_speed_meas) > KICK_SPD_EXIT || fabsf(g_speed_ref) < 1.0f)
+                else if (fabsf(g_speed_ref) < 0.5f)
                 {
                     g_kick = 0;
-                    s_duty_hi = 0.45f;
-                    g_kick_fail = 0;   /* 冲击成功/旋钮回零：失败计数清零 */
+                    g_kick_fail = 0;   /* 旋钮回零：复位 */
                 }
                 speed_updated = 0;
             }
@@ -400,8 +417,8 @@ int core0_main(void)
                 if (g_iq_ref > 150.0f) g_iq_ref = 150.0f;
                 if (g_iq_ref < -150.0f) g_iq_ref = -150.0f;
 
-                /* 堵转检测：spd≈0 且 有给定（不依赖 iqr 饱和——kick 失败后 iqr 回落到 -6 附近不饱和，
-                 * 若靠饱和判据则 kick 永远无法重触发）→ 持续 200ms 触发冲击脱困 */
+                /* 堵转检测：spd≈0 且 有给定（不依赖 iqr 饱和——脱困失败后 iqr 回落到 -6 附近不饱和，
+                 * 若靠饱和判据则永远无法重触发）→ 持续 200ms 触发扫角脱困 */
                 if (fabsf(g_speed_meas) < STALL_SPD_LIM && fabsf(g_speed_ref) > STALL_SREF_MIN
                     && g_kick_fail < KICK_FAIL_MAX)
                 {
@@ -409,8 +426,10 @@ int core0_main(void)
                     {
                         g_stall_cnt = 0;
                         g_kick = 1;
-                        g_kick_cnt = KICK_WINDOWS;
-                        s_duty_hi = 0.95f;
+                        g_sweep_angle = g_elec_angle;   /* 从堵转位置开始旋转磁通 */
+                        g_sweep_start = g_elec_angle;
+                        g_sweep_dir = (g_speed_ref < 0.0f) ? -1.0f : 1.0f;
+                        g_sweep_iq = (g_speed_ref < 0.0f) ? -SWEEP_IREF : SWEEP_IREF;
                         speed_integral = 0.0f;
                     }
                 }
