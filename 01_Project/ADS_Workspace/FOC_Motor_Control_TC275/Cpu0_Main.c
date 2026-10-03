@@ -409,10 +409,17 @@ int core0_main(void)
                 if (!windup) speed_integral += err_speed;
                 if (speed_integral > 3000.0f) speed_integral = 3000.0f;
                 if (speed_integral < -3000.0f) speed_integral = -3000.0f;
-                float32 new_iq = 0.5f * err_speed + 0.05f * speed_integral;
+                float32 new_iq = 0.8f * err_speed + 0.08f * speed_integral;
+                /* 低速最小力矩偏置：|sref| 0.5~8 rad/s 时 iq 至少 ±80 码（≈0.9A），
+                 * 保证持续力矩翻越齿槽，消除低速"左右晃"爬行振荡 */
+                if (fabsf(g_speed_ref) > 0.5f && fabsf(g_speed_ref) < 8.0f)
+                {
+                    if (new_iq > -80.0f && new_iq < 80.0f)
+                        new_iq = (err_speed >= 0.0f) ? 80.0f : -80.0f;
+                }
                 float32 dq = new_iq - g_iq_ref;
-                if (dq > 6.0f) dq = 6.0f;
-                if (dq < -6.0f) dq = -6.0f;
+                if (dq > 8.0f) dq = 8.0f;
+                if (dq < -8.0f) dq = -8.0f;
                 g_iq_ref += dq;
                 if (g_iq_ref > 150.0f) g_iq_ref = 150.0f;
                 if (g_iq_ref < -150.0f) g_iq_ref = -150.0f;
