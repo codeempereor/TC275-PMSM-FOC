@@ -221,13 +221,6 @@ void FOC_PWM_ISR(void)
         {
             g_foc_mode = 2;
             g_id_ref = 0.0f;
-            /* Park 参考系连续化：切环瞬间 θ_i(磁场角) 与 el(编码器角) 相差
-             * V/f 同步负载角(实测 2.5 rad) → 直接切换 Park 从 θ_i 跳 el → 力矩方向
-             * 突变 → 转子加速到 -8 后掉速摆停。把 g_mech 重设为 θ_i 对应码 →
-             * 422 行 el=θ_i → 参考系零跳变平滑接管（FOC 角度任意起点均可用，
-             * 只需连续+与转子同步） */
-            g_mech = (sint32)(g_theta_i * (float32)ENCODER_RESOLUTION
-                     / (TWO_PI * (float32)MOTOR_POLE_PAIRS));
             g_iq_ref = -20.0f;   /* 切闭环直接给稳态力矩（0.23A）：I/f 8.5 → 目标 8 只需微减速，
                                   * 不经过转速零点 → 不卡齿槽。任何高于稳态的初值回落时都会拉崩转速 */
             /* 积分器预充：让速度环首拍输出接近稳态力矩（-20 码）。
@@ -670,7 +663,12 @@ int core0_main(void)
                 }
                 else
                 {
-                    new_iq = 2.0f * err_speed + 0.08f * speed_integral - 0.3f * spd_delta;
+                    new_iq = 2.0f * err_speed + 0.08f * speed_integral - 0.3f * spd_delta
+                           + g_speed_ref * 2.75f;   /* 稳态前馈维持力矩：速度环稳态时 err=0
+                                                     * → 输出 0 → 无维持力矩 → 转子惯性滑行
+                                                     * → 齿槽吃掉 → 掉速停（实测加速到 -8.3 后
+                                                     * 掉速到 0 摆停）。sref=-8 → -22 码 0.25A
+                                                     * 恰好维持 -8 rad/s；爬坡段叠加加速 */
                 }
 
                 /* 力矩预充：spd 跌到 0 附近且有给定 → 40ms 后满力矩冲齿槽。
