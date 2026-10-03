@@ -77,22 +77,28 @@ static volatile uint8 g_dir_chk = 0;              /* 磁极方向确认：0=未�
 static sint32 dir_accum = 0;
 static volatile uint32 dir_t_start = 0;
 
-/* 堵转脱困（方案C：扫角——开环缓慢旋转磁通，低电流拉着转子翻越齿槽，3A 电源友好） */
-static volatile uint8  g_kick = 0;             /* 1=扫角脱困中 */
-static float32 g_sweep_angle = 0.0f;           /* 扫角当前电角度（开环） */
-static float32 g_sweep_start = 0.0f;           /* 扫角起始电角度 */
-static float32 g_sweep_dir  = 0.0f;            /* 扫角方向 ±1（跟随 sref） */
-static float32 g_sweep_iq   = 0.0f;            /* 扫角 q 电流给定（码值，限流） */
+/* 堵转脱困+低速拖动（开环旋转磁通，低电流限流，3A 电源友好）
+ * mode0=低速拖动：|sref|<LOW_SPD_MAX 时磁场斜坡加速到目标电转速，平滑起步
+ * mode1=堵转脱困：|sref|≥LOW_SPD_MAX 且 spd≈0 时慢速扫角翻越齿槽 */
+static volatile uint8  g_kick = 0;             /* 1=开环拖动/脱困中 */
+static float32 g_sweep_angle = 0.0f;           /* 开环当前电角度 */
+static float32 g_sweep_start = 0.0f;           /* 开环起始电角度 */
+static float32 g_sweep_dir  = 0.0f;            /* 方向 ±1（跟随 sref） */
+static float32 g_sweep_iq   = 0.0f;            /* q 电流给定（码值，限流） */
+static float32 g_sweep_spd  = 0.0f;            /* 当前开环电角速度 rad/s */
+static uint8  g_sweep_mode = 0;                /* 0=低速拖动 1=堵转脱困 */
 static uint16 g_stall_cnt = 0;                 /* 堵转连续窗计数 */
-static uint8  g_kick_fail = 0;                 /* 连续脱困失败次数 */
+static uint8  g_kick_fail = 0;                 /* 连续失败次数 */
 #define STALL_SPD_LIM  0.5f    /* 堵转判定：|spd|<0.5 rad/s */
-#define STALL_SREF_MIN 0.5f    /* 堵转判定：|sref|>0.5 rad/s 才判（仅挡零位；低速给定同样需要脱困） */
+#define STALL_SREF_MIN 0.5f    /* 有给定（仅挡零位） */
 #define STALL_WINDOWS  40      /* 持续 200ms 判堵转 */
-#define SWEEP_SPD      3.0f    /* 扫角电角速度 rad/s（≈0.3 机械 rad/s，转子同步跟随） */
-#define SWEEP_ANG_MAX  6.283f  /* 最大扫过 2π 电角（36° 机械，必翻越至少一个齿槽） */
-#define SWEEP_IREF     80.0f   /* 扫角 q 电流给定 ≈0.9A（电压由电流环限制，不超 3A 电源） */
-#define SWEEP_EXIT_SPD 0.5f    /* 转子动起来即成功退出 */
-#define KICK_FAIL_MAX  3       /* 连续失败 3 次停止扫角，降 iq=-50 冷却，旋钮回零复位 */
+#define LOW_SPD_MAX    4.0f    /* 低速区上限：|sref|<4 rad/s 直接开环拖动（平滑起步） */
+#define SWEEP_SPD      3.0f    /* 堵转脱困扫角速度（电 rad/s，慢速翻齿槽） */
+#define SWEEP_RAMP     100.0f  /* 低速拖动加速斜坡 rad/s²（0→目标电转速平滑） */
+#define SWEEP_ANG_MAX  6.283f  /* 最大扫过 2π 电角（36° 机械，必翻越齿槽） */
+#define SWEEP_IREF     130.0f  /* 拖动/脱困 q 电流 ≈1.5A（3A 电源内） */
+#define SWEEP_EXIT_SPD 0.5f    /* 脱困成功判定：转子动起来 */
+#define KICK_FAIL_MAX  3       /* 连续失败 3 次停止，降 iq=-50 冷却，旋钮回零复位 */
 
 static volatile uint8  g_foc_mode = 0;   /* 0=预定位 1=开环加速 2=闭环 */
 static volatile float32 g_theta_i = 0.0f;
@@ -167,7 +173,14 @@ void FOC_PWM_ISR(void)
     float32 ang_use;
     if (g_kick)
     {
-        g_sweep_angle += g_sweep_dir * SWEEP_SPD * 0.00005f;  /* 开环磁通旋转：拉着转子翻越齿槽 */
+        if (g_sweep_mode == 0)
+        {
+            /* 低速拖动：磁场斜坡加速到目标电转速（|sref|×极对数），转子同步平滑起步 */
+            float32 tgt = fabsf(g_speed_ref) * (float32)MOTOR_POLE_PAIRS;
+            g_sweep_spd += SWEEP_RAMP * 0.00005f;
+            if (g_sweep_spd > tgt) g_sweep_spd = tgt;
+        }
+        g_sweep_angle += g_sweep_dir * g_sweep_spd * 0.00005f;  /* 开环磁通旋转 */
         ang_use = g_sweep_angle;
     }
     else
@@ -369,32 +382,76 @@ int core0_main(void)
         {
             if (g_kick)
             {
-                /* 扫角进行中：每 5ms 检查一次——转子动起来=成功；扫完 2π 未动=失败；旋钮回零=复位 */
+                /* 开环拖动进行中：每 5ms 检查——mode0 升速/回零退出，mode1 脱困成功/失败退出 */
                 speed_integral = 0.0f;
                 float32 swept = fabsf(g_sweep_angle - g_sweep_start);
-                if (fabsf(g_speed_meas) > SWEEP_EXIT_SPD)
+                if (g_sweep_mode == 0)
                 {
-                    g_kick = 0;
-                    g_kick_fail = 0;   /* 脱困成功：失败计数清零 */
-                }
-                else if (swept >= SWEEP_ANG_MAX)
-                {
-                    g_kick = 0;
-                    if (++g_kick_fail >= KICK_FAIL_MAX)
+                    if (fabsf(g_speed_ref) >= LOW_SPD_MAX || fabsf(g_speed_ref) < 0.5f)
                     {
-                        g_kick_fail = KICK_FAIL_MAX;
-                        g_iq_ref = -50.0f;   /* 3次失败：降回低力矩等待（防持续大电流发热），旋钮回零后复位 */
+                        g_kick = 0;
+                        g_kick_fail = 0;   /* 升到中高速切闭环 / 旋钮回零 */
+                    }
+                    else if (fabsf(g_speed_meas) < 0.3f && swept >= SWEEP_ANG_MAX)
+                    {
+                        g_kick = 0;   /* 磁场转完 2π 转子没跟 → 拖不动（负载过重） */
+                        if (++g_kick_fail >= KICK_FAIL_MAX)
+                        {
+                            g_kick_fail = KICK_FAIL_MAX;
+                            g_iq_ref = -50.0f;   /* 3次失败：冷却等待，旋钮回零后复位 */
+                        }
                     }
                 }
-                else if (fabsf(g_speed_ref) < 0.5f)
+                else
                 {
-                    g_kick = 0;
-                    g_kick_fail = 0;   /* 旋钮回零：复位 */
+                    if (fabsf(g_speed_meas) > SWEEP_EXIT_SPD)
+                    {
+                        g_kick = 0;
+                        g_kick_fail = 0;   /* 脱困成功：转子动起来，闭环接管 */
+                    }
+                    else if (fabsf(g_speed_ref) < LOW_SPD_MAX && fabsf(g_speed_ref) > 0.5f)
+                    {
+                        g_sweep_mode = 0;   /* 旋钮拧回低速区：无缝切换为低速拖动（重新斜坡到新目标） */
+                        g_sweep_spd = 0.0f;
+                        g_sweep_start = g_sweep_angle;
+                        g_sweep_iq = (g_speed_ref < 0.0f) ? -SWEEP_IREF : SWEEP_IREF;
+                        g_sweep_dir = (g_speed_ref < 0.0f) ? -1.0f : 1.0f;
+                    }
+                    else if (swept >= SWEEP_ANG_MAX)
+                    {
+                        g_kick = 0;
+                        if (++g_kick_fail >= KICK_FAIL_MAX)
+                        {
+                            g_kick_fail = KICK_FAIL_MAX;
+                            g_iq_ref = -50.0f;
+                        }
+                    }
+                    else if (fabsf(g_speed_ref) < 0.5f)
+                    {
+                        g_kick = 0;
+                        g_kick_fail = 0;   /* 旋钮回零 */
+                    }
                 }
                 speed_updated = 0;
             }
             else
             {
+                /* 低速区（0.5<|sref|<LOW_SPD_MAX）：直接开环拖动起步——磁场斜坡加速，
+                 * 恒定电流拖着转子平滑转，替代速度环（低速速度环会在齿槽间振荡） */
+                if (fabsf(g_speed_ref) < LOW_SPD_MAX && fabsf(g_speed_ref) > STALL_SREF_MIN
+                    && g_kick_fail < KICK_FAIL_MAX)
+                {
+                    g_kick = 1;
+                    g_sweep_mode = 0;
+                    g_sweep_angle = g_elec_angle;
+                    g_sweep_start = g_elec_angle;
+                    g_sweep_dir = (g_speed_ref < 0.0f) ? -1.0f : 1.0f;
+                    g_sweep_iq = (g_speed_ref < 0.0f) ? -SWEEP_IREF : SWEEP_IREF;
+                    g_sweep_spd = 0.0f;
+                    speed_integral = 0.0f;
+                    speed_updated = 0;
+                    continue;
+                }
                 if (g_speed_meas * g_speed_ref < -30.0f && fabsf(g_speed_meas) > 3.0f)
                 {
                     g_mech += (sint32)ENCODER_RESOLUTION / MOTOR_POLE_PAIRS / 2;  /* 磁极反 → 翻 π */
@@ -410,13 +467,6 @@ int core0_main(void)
                 if (speed_integral > 3000.0f) speed_integral = 3000.0f;
                 if (speed_integral < -3000.0f) speed_integral = -3000.0f;
                 float32 new_iq = 0.8f * err_speed + 0.08f * speed_integral;
-                /* 低速最小力矩偏置：|sref| 0.5~8 rad/s 时 iq 至少 ±80 码（≈0.9A），
-                 * 保证持续力矩翻越齿槽，消除低速"左右晃"爬行振荡 */
-                if (fabsf(g_speed_ref) > 0.5f && fabsf(g_speed_ref) < 8.0f)
-                {
-                    if (new_iq > -80.0f && new_iq < 80.0f)
-                        new_iq = (err_speed >= 0.0f) ? 80.0f : -80.0f;
-                }
                 float32 dq = new_iq - g_iq_ref;
                 if (dq > 8.0f) dq = 8.0f;
                 if (dq < -8.0f) dq = -8.0f;
@@ -424,19 +474,21 @@ int core0_main(void)
                 if (g_iq_ref > 150.0f) g_iq_ref = 150.0f;
                 if (g_iq_ref < -150.0f) g_iq_ref = -150.0f;
 
-                /* 堵转检测：spd≈0 且 有给定（不依赖 iqr 饱和——脱困失败后 iqr 回落到 -6 附近不饱和，
-                 * 若靠饱和判据则永远无法重触发）→ 持续 200ms 触发扫角脱困 */
-                if (fabsf(g_speed_meas) < STALL_SPD_LIM && fabsf(g_speed_ref) > STALL_SREF_MIN
+                /* 堵转检测（仅中高速区 |sref|≥LOW_SPD_MAX；低速区已直接开环拖动）：
+                 * spd≈0 且有给定 → 持续 200ms 触发慢速扫角脱困 */
+                if (fabsf(g_speed_meas) < STALL_SPD_LIM && fabsf(g_speed_ref) >= LOW_SPD_MAX
                     && g_kick_fail < KICK_FAIL_MAX)
                 {
                     if (++g_stall_cnt >= STALL_WINDOWS)
                     {
                         g_stall_cnt = 0;
                         g_kick = 1;
-                        g_sweep_angle = g_elec_angle;   /* 从堵转位置开始旋转磁通 */
+                        g_sweep_mode = 1;
+                        g_sweep_angle = g_elec_angle;
                         g_sweep_start = g_elec_angle;
                         g_sweep_dir = (g_speed_ref < 0.0f) ? -1.0f : 1.0f;
                         g_sweep_iq = (g_speed_ref < 0.0f) ? -SWEEP_IREF : SWEEP_IREF;
+                        g_sweep_spd = SWEEP_SPD;
                         speed_integral = 0.0f;
                     }
                 }
