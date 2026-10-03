@@ -235,8 +235,8 @@ void FOC_PWM_ISR(void)
             g_dir_chk = 2;   /* I/f 方向已跟随旋钮 → 切闭环时方向已知，跳过方向确认窗，
                               * 速度环/力矩预充立即接管（否则 iqr=-20 原地抖 2 秒等超时） */
             g_spd_ramp = g_speed_ref;  /* 斜坡直接锁目标（不归零重爬）：boost 结束速度环首拍即稳态区 */
-            g_boost_cnt = 30;          /* 切环力矩 boost：150ms 1.15A 磁场角定向冲出齿槽势阱，
-                                        * 防切环瞬间力矩骤降（iqr -20 起步=0.23A<齿槽）→ 卡死微摆 */
+            g_boost_cnt = 20;          /* 切环力矩 boost：100ms 1.15A 冲出齿槽势阱（43e62b0
+                                        * 验证 1.15A 是唯一够冲的力矩；100ms 减短正冲窗口） */
             dir_t_start = g_isr_cnt;
         }
         else if (g_omega_i >= OMEGA_MAX && g_if_stall_cnt >= 20 && g_if_flip_cnt < 3)
@@ -436,7 +436,9 @@ int core0_main(void)
                  * 永远看到旧速度 → 刹不住 → 转子带着错误目标转飞） */
                 if (raw_speed > prev_spd + 2.0f) raw_speed = prev_spd + 2.0f;
                 else if (raw_speed < prev_spd - 2.0f) raw_speed = prev_spd - 2.0f;
-                g_speed_meas = prev_spd * 0.8f + raw_speed * 0.2f;
+                g_speed_meas = prev_spd * 0.9f + raw_speed * 0.1f;   /* 低通 0.8/0.2→0.9/0.1：
+                                                                       * 稳定段测速噪声致 spd ±30%
+                                                                       * 波动(43e62b0 实测 -700~-1100) */
                 speed_updated = 1;
             }
             speed_delta_win = 0;
@@ -571,14 +573,9 @@ int core0_main(void)
                  * 恢复 1.15A + 延长 150ms 冲出势阱。编码器增量钳位 ±800 已兜住打飞风险 */
                 if (g_boost_cnt > 0)
                 {
-                    /* boost 期间 Park 用 θ_i 磁场角连续积分（纯积分无噪声）：切环瞬间
-                     * 编码器读数被电磁噪声污染 → 跟随 el 方向乱(正冲 +19.9)、冻结 el
-                     * 转子转开就错位(推不动 0.7A 卡齿槽)。θ_i 连续前移 → iq=-100 相对
-                     * 转子保持 90° → 1.15A 大力矩方向确定冲出任何齿槽位。SW 实测负载角
-                     * ≈0.005 rad → boost 结束切回编码器几乎零跳变 */
-                    float32 dir_b = (g_speed_ref < 0.0f) ? -1.0f : 1.0f;
-                    g_theta_i += dir_b * g_omega_i * 0.00005f;
-                    g_elec_angle = g_theta_i;
+                    /* boost 用实时 el（编码器持续更新）：θ_i 定向在负载角大时(实测 1.59 rad)
+                     * 同样方向错(正冲 +20.2)；冻结推不动；1.15A+实时 el 是唯一能转 4 圈的
+                     * 组合(43e62b0)。噪声只在切环瞬间几 ms，之后编码器恢复干净 */
                     g_iq_ref = (g_speed_ref < 0.0f) ? -100.0f : 100.0f;
                     g_boost_cnt--;
                     g_spd_prev = g_speed_meas;
@@ -673,11 +670,12 @@ int core0_main(void)
                 else
                 {
                     new_iq = 2.0f * err_speed + 0.08f * speed_integral - 0.3f * spd_delta
-                           + g_speed_ref * 2.75f;   /* 稳态前馈维持力矩：速度环稳态时 err=0
-                                                     * → 输出 0 → 无维持力矩 → 转子惯性滑行
-                                                     * → 齿槽吃掉 → 掉速停（实测加速到 -8.3 后
-                                                     * 掉速到 0 摆停）。sref=-8 → -22 码 0.25A
-                                                     * 恰好维持 -8 rad/s；爬坡段叠加加速 */
+                           + g_speed_ref * 6.0f;   /* 稳态前馈维持力矩：云台齿槽力矩随位置
+                                                    * 大幅变化(0.3~1A+ 等效)——sref×2.75(-22
+                                                    * 码 0.25A)只在弱齿槽位维持住，硬位掉速停
+                                                    * (实测 -16.4k/-1390k/-140k 摆)。sref=-8
+                                                    * → -48 码 0.55A 覆盖中弱齿槽；超速分支
+                                                    * 保持纯 P 刹，前馈不干扰刹车 */
                 }
 
                 /* 力矩预充：spd 跌到 0 附近且有给定 → 40ms 后满力矩冲齿槽。
