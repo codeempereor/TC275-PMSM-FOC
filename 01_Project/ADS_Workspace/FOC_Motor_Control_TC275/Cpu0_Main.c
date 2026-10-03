@@ -118,7 +118,9 @@ static uint16 g_pole_chk_cnt = 0;              /* 磁极方向自检连续窗计
                                 * ∝v² → 冲过强齿槽，扫角后速度环接管 */
 #define SWEEP_RAMP     100.0f  /* 低速拖动加速斜坡 rad/s²（0→目标电转速平滑） */
 #define SWEEP_ANG_MAX  6.283f  /* 最大扫过 2π 电角（36° 机械，必翻越齿槽） */
-#define SWEEP_IREF     130.0f  /* 拖动/脱困 q 电流 ≈1.5A（3A 电源内） */
+#define SWEEP_IREF     150.0f  /* 拖动/脱困 q 电流 ≈1.7A（3A 电源内，单相 1.7A<3A 安全）。
+                                * 130(1.5A) 在最强齿槽位(实测 -213k/-873k)拖停后扫角
+                                * 需 1.5s 恢复；150 冲力更大一次冲过概率高 → 卡位更短 */
 #define SWEEP_EXIT_SPD 0.5f    /* 脱困成功判定：转子动起来 */
 #define KICK_FAIL_MAX  3       /* 连续失败 3 次 → 冷却 2 秒自动重试（无需回零） */
 #define FAIL_COOL_WINDOWS 400  /* 冷却窗 = 400×5ms = 2s */
