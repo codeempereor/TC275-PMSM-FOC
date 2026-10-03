@@ -67,6 +67,7 @@ static volatile float32 g_spd_ramp = 0.0f;      /* 速度环目标斜坡：5ms �
                                                 * 0.4s 平滑升到 8，防启动即大误差→力矩饱和→狂加速过冲→反向振荡("一卡一卡") */
 static uint16 g_pot_raw = 0;                    /* 电位器原始 12bit ADC 值 */
 static float32 g_speed_meas = 0.0f;
+static float32 g_spd_prev = 0.0f;   /* 速度环 D 项（微分阻尼）：上一窗滤波转速 */
 static float32 speed_integral = 0.0f;
 static sint32 speed_delta_win = 0;
 static uint32 speed_t_start = 0;
@@ -540,26 +541,32 @@ int core0_main(void)
                 else if (fabsf(g_spd_ramp - g_speed_ref) >= 0.05f) speed_integral = 0.0f;
                 if (speed_integral > 800.0f) speed_integral = 800.0f;
                 if (speed_integral < -800.0f) speed_integral = -800.0f;
+                /* D 项（微分阻尼）：spd 快速变化时产生反向阻尼力矩，压摆动极限环。
+                 * 实测无 D 项时摆动期 err 巨大 → 输出每次打满 ±30 限幅 → 满力矩来回摆
+                 * （spd ±400 交替、vq 恒 -500 饱和，0.2~0.4s 周期），无收敛 → "左右晃幅度大" */
+                float32 spd_delta = g_speed_meas - g_spd_prev;
+                g_spd_prev = g_speed_meas;
                 float32 new_iq;
-                /* 超速（同向超出目标 0.5）：纯比例强刹，防深负积分抵消刹车。
+                /* 超速（同向超出目标 0.5）：纯比例强刹 + D 阻尼，防深负积分抵消刹车。
                  * 此前积分深负（-400，0.04×(-400)=-16）压过 Kp(+3) → 超速还加速 →
                  * 冲出-滑行-掉速-预充循环（"一卡一卡"，实测超速 iqr=-9~-12 不刹车） */
                 if ((g_spd_ramp < 0.0f && g_speed_meas < g_spd_ramp - 0.5f) ||
                     (g_spd_ramp > 0.0f && g_speed_meas > g_spd_ramp + 0.5f))
                 {
-                    new_iq = 1.5f * err_speed;
+                    new_iq = 1.5f * err_speed - 0.3f * spd_delta;
                 }
                 else
                 {
-                    new_iq = 1.0f * err_speed + 0.04f * speed_integral;
+                    new_iq = 1.0f * err_speed + 0.04f * speed_integral - 0.3f * spd_delta;
                 }
 
                 /* 力矩预充：spd 跌到 0 附近且有给定 → 40ms 后满力矩冲齿槽。
                  * 速度环 Kp 项在静止起步时只有 ~0.07A，积分爬满需 >1s，齿槽等不及；
                  * 预充让起步/偶发堵转瞬间就有大电流，冲出后速度环立即接管。
                  * -100(1.15A) 而非 -150：冲出柔和，冲到 ~8-10 速度环接得住；
-                 * -150 会冲到 13+ rad/s（超目标 8），速度环斜坡还没爬到就被迫猛刹 → 走走停停 */
-                if (fabsf(g_speed_meas) < 2.0f && fabsf(g_speed_ref) >= LOW_SPD_MAX
+                 * 触发阈值 spd<0.5 而非 <2：摆动极限环期 spd 每 0.2s 过零一次，
+                 * <2 会频繁触发预充 -100 加剧摆动（实测摆动期 iqr 反复 -100 冲出又拉回） */
+                if (fabsf(g_speed_meas) < 0.5f && fabsf(g_speed_ref) >= LOW_SPD_MAX
                     && g_kick_fail < KICK_FAIL_MAX)
                 {
                     if (++g_torq_pump_cnt >= 8)
