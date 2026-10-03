@@ -102,6 +102,8 @@ static uint16 g_pole_chk_cnt = 0;              /* 磁极方向自检连续窗计
 #define SWEEP_EXIT_SPD 0.5f    /* 脱困成功判定：转子动起来 */
 #define KICK_FAIL_MAX  3       /* 连续失败 3 次 → 冷却 2 秒自动重试（无需回零） */
 #define FAIL_COOL_WINDOWS 400  /* 冷却窗 = 400×5ms = 2s */
+#define BASE_SPEED     8.0f    /* 旋钮 0% 基础转速 rad/s（≈76 RPM，闭环稳定区起步） */
+#define MAX_SPEED      12.0f   /* 旋钮 100% 顶速 rad/s（duty 0.45 电压极限） */
 
 static volatile uint8  g_foc_mode = 0;   /* 0=预定位 1=开环加速 2=闭环 */
 static volatile float32 g_theta_i = 0.0f;
@@ -374,8 +376,12 @@ int core0_main(void)
             pot_cnt = 0;
             FOC_ADC_TriggerPot();
             g_pot_raw = FOC_ADC_ReadRaw(0);
-            float32 target = (g_pot_raw < 40) ? 0.0f
-                            : -(float32)(g_pot_raw - 40) / 4055.0f * 12.0f;  /* 死区40码后线性升到 -12 */
+            /* 旋钮映射（新控制律）：0% → BASE_SPEED 稳定高速，100% → MAX_SPEED 顶速。
+             * 全程工作点落在闭环稳定高速区，绕开低速齿槽爬行/堵转振荡 */
+            float32 pot_norm = (float32)(g_pot_raw - 40) / 4055.0f;
+            if (pot_norm < 0.0f) pot_norm = 0.0f;
+            if (pot_norm > 1.0f) pot_norm = 1.0f;
+            float32 target = -(BASE_SPEED + pot_norm * (MAX_SPEED - BASE_SPEED));
             g_speed_ref_filt = g_speed_ref_filt * 0.9f + target * 0.1f;       /* 一阶低通防跳变 */
             g_speed_ref = g_speed_ref_filt;
             if (fabsf(g_speed_ref) < 0.5f) { speed_integral = 0.0f; g_kick_fail = 0; }  /* 停转位清积分/失败计数：旋钮回零必须能停 */
