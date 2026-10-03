@@ -124,9 +124,9 @@ static volatile float32 g_theta_i = 0.0f;
 static volatile float32 g_omega_i = 0.0f;
 static volatile uint16 g_prepos_cnt = 0;
 #define I_START      200.0f   /* 预定位强拉电流(码, 2.3A)：定位必须足强克服齿槽 → 磁极方向唯一 */
-#define IF_ID        150.0f   /* I/f 拖动力矩(码, 1.7A)：200 目标时 vd 恒饱和(实测 id 只建立~80=0.9A)，
-                               * 励磁弱 → 转子丢步(磁场 8.5 只跟到 0.9) → 切环后力矩骤降卡齿槽。
-                               * 150 目标 vd 进入线性区 → 电流实际建立 → 拖动力矩提升 ~90% */
+#define IF_ID        130.0f   /* I/f 拖动力矩(码, 1.5A)：150 时转子跟上磁场(7.5 vs 8.5) ✓
+                               * 但电压需求高 → duty 拉向 0.45 边界 → 固定中点采样失效(尖峰)。
+                               * 130 电压需求降 → duty 居中 → 采样改善 → 抖动减小 */
 #define OMEGA_MIN    2.0f     /* 起始电频率 rad/s */
 #define OMEGA_MAX    85.0f    /* 切换电频率 rad/s (≈8.5 机械 rad/s，直接到工作点上方，启动段无堵转) */
 #define OMEGA_RAMP   25.0f    /* 频率斜坡 rad/s²（3.4s 到 85）：云台电机惯量大，
@@ -269,8 +269,10 @@ void FOC_PWM_ISR(void)
 
     g_id = id;
     g_iq = iq;
-    g_id_filt = g_id_filt * 0.7f + id * 0.3f;
-    g_iq_filt = g_iq_filt * 0.7f + iq * 0.3f;
+    g_id_filt = g_id_filt * 0.85f + id * 0.15f;
+    g_iq_filt = g_iq_filt * 0.85f + iq * 0.15f;   /* 强滤波：高速下固定中点采样偶发尖峰
+                                                  * （实测 iq 瞬时 ±654=7.5A、ra/rb 1433/2480），
+                                                  * 0.7/0.3 太轻 → 电流环被打飞 → vd/vq 饱和乱控 → 超级抖 */
 
     float32 vd, vq, valpha, vbeta;
     if (g_kick)
