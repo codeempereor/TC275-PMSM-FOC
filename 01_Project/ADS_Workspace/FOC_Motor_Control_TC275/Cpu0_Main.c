@@ -423,16 +423,13 @@ int core0_main(void)
             if (dt_s > 1e-4f && dt_s < 1.0f)
             {
                 float32 raw_speed = (float32)speed_delta_win / ENCODER_RESOLUTION * TWO_PI / dt_s;
-                if (fabsf(raw_speed - g_speed_meas) > 2.0f)
-                {
-                    /* 单窗速度突变 >2 rad/s：切环强电流电磁噪声 → AS5047P 误读尖峰
-                     * （实测切环瞬间 spd 假值 +5430=54 rad/s → 速度环被假 spd 打飞 → 乱控 → 抖）
-                     * 保持旧值，尖峰被挡；正常运转相邻 5ms 速度变化 <0.05 rad/s，2 足够宽松 */
-                }
-                else
-                {
-                    g_speed_meas = g_speed_meas * 0.8f + raw_speed * 0.2f;
-                }
+                float32 prev_spd = g_speed_meas;
+                /* 单窗速度最多变化 2 rad/s：切环瞬间编码器误读尖峰(±50)被钳住，
+                 * 但真实加速能跟随（每窗+2 爬升，不锁死——保持旧值会让速度环
+                 * 永远看到旧速度 → 刹不住 → 转子带着错误目标转飞） */
+                if (raw_speed > prev_spd + 2.0f) raw_speed = prev_spd + 2.0f;
+                else if (raw_speed < prev_spd - 2.0f) raw_speed = prev_spd - 2.0f;
+                g_speed_meas = prev_spd * 0.8f + raw_speed * 0.2f;
                 speed_updated = 1;
             }
             speed_delta_win = 0;
