@@ -114,9 +114,8 @@ void FOC_ADC_ReadAll(float32 *ia, float32 *ib, float32 *ic)
     FOC_ADC_StartSync();
     uint16 rawA = FOC_ADC_ReadRaw(7);
     uint16 rawB = FOC_ADC_ReadRaw(6);
-    uint16 rawC = FOC_ADC_ReadRaw(5);
 
     *ia = ((float32)rawA - 2048.0f) * ADC_CURRENT_SCALE;
     *ib = ((float32)rawB - 2048.0f) * ADC_CURRENT_SCALE;
-    *ic = ((float32)rawC - 2048.0f) * ADC_CURRENT_SCALE;
+    *ic = -(*ia + *ib);   /* C 相重构（扫描 mask 已去通道 5，勿读 ReadRaw(5) → VF 死等） */
 }

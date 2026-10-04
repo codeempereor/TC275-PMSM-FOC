@@ -397,18 +397,20 @@ int core0_main(void)
     FOC_UART_Print("ADC Ready\r\n");
 
     FOC_UART_Print("Calibrating zero current offset...\r\n");
-    uint32 sumA = 0, sumB = 0, sumC = 0;
+    uint32 sumA = 0, sumB = 0;
     #define CALIB_SAMPLES 1000
     for (uint32 i = 0; i < CALIB_SAMPLES; i++)
     {
         FOC_ADC_StartSync();
         sumA += FOC_ADC_ReadRaw(7);
         sumB += FOC_ADC_ReadRaw(6);
-        sumC += FOC_ADC_ReadRaw(5);
+        /* 只校准 A/B 两相：扫描 mask 已去掉 C 相通道（转换时间减 1/3，本次架构改造），
+         * 读通道 5 会死等 VF（无转换）→ 上电卡死（实测 9d9eb9c 实测现象）。
+         * C 相零偏 g_offC 在 ISR 中从不使用（ic=-(ia+ib) 重构）→ 给理论中点 2048。 */
     }
     g_offA = (uint16)(sumA / CALIB_SAMPLES);
     g_offB = (uint16)(sumB / CALIB_SAMPLES);
-    g_offC = (uint16)(sumC / CALIB_SAMPLES);
+    g_offC = 2048;
     FOC_UART_Print("Zero offset: A="); FOC_UART_PrintInt(g_offA);
     FOC_UART_Print(" B="); FOC_UART_PrintInt(g_offB);
     FOC_UART_Print(" C="); FOC_UART_PrintInt(g_offC);
