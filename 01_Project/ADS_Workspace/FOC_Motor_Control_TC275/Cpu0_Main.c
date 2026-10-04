@@ -694,7 +694,11 @@ int core0_main(void)
                 if ((g_spd_ramp < 0.0f && g_speed_meas < g_spd_ramp - 0.5f) ||
                     (g_spd_ramp > 0.0f && g_speed_meas > g_spd_ramp + 0.5f))
                 {
-                    new_iq = 1.5f * err_speed - 0.3f * spd_delta;
+                    new_iq = 2.5f * err_speed - 0.3f * spd_delta;   /* 刹车 1.5→2.5：纯基线实测超速段
+                                                                     * iqr 仅 +5~8（0.06-0.09A）刹不住，
+                                                                     * spd -1345 需 ~10 行才回落 → 波动周期
+                                                                     * ~0.5s（忽快忽慢）。加强刹车 → 超速
+                                                                     * 回落快 → 波动窗口小 */
                 }
                 else
                 {
@@ -725,7 +729,10 @@ int core0_main(void)
                     {
                         speed_integral = 0.0f;   /* 冲出前清积分：冲出后超速分支纯比例刹，回落积分从 0 重建，
                                                   * 不残留掉速段的负偏置（否则冲出后 0.04×(-偏置) 抵消刹车） */
-                        new_iq = (g_speed_ref < 0.0f) ? -150.0f : 150.0f;
+                        new_iq = (g_speed_ref < 0.0f) ? -110.0f : 110.0f;   /* 预充 1.7A→1.26A：纯基线实测
+                                                                            * 1.7A 冲出过猛 → 超速 -1345（超目标
+                                                                            * 68%）→ 刹车回落 → 再掉速 → 波动循环。
+                                                                            * 1.26A 温和冲出 → 超速小 → 波动收窄 */
                     }
                 }
                 else
@@ -736,8 +743,11 @@ int core0_main(void)
                 if (g_dir_flip) new_iq = -new_iq;   /* 磁极反：速度环/预充输出统一取反 →
                                                      * 力矩反向 → 转子拉回正确方向 */
                 float32 dq = new_iq - g_iq_ref;
-                if (dq > 30.0f) dq = 30.0f;
-                if (dq < -30.0f) dq = -30.0f;
+                if (dq > 60.0f) dq = 60.0f;
+                if (dq < -60.0f) dq = -60.0f;   /* 力矩爬升 ±30→±60：纯基线实测正常段掉速时
+                                                 * iqr 仅 -29~-57 爬升太慢追不上齿槽掉速（spd
+                                                 * -850→-98 持续掉）→ 预充兜底 → 波动。±60 掉速
+                                                 * 初期快速补力矩 → 多数齿槽不掉 → 预充少触发 */
                 g_iq_ref += dq;
                 if (g_iq_ref > 150.0f) g_iq_ref = 150.0f;
                 if (g_iq_ref < -150.0f) g_iq_ref = -150.0f;
