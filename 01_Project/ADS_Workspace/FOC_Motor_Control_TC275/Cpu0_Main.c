@@ -61,8 +61,9 @@ static uint16 g_cog_revs = 0;                       /* 已学圈数 */
 static volatile uint8 g_cog_state = 0;              /* 0=off 1=learning 2=on */
 static volatile float32 g_cog_fb = 0;               /* ISR 补偿前馈值 */
 #define COGGING_REVS_REQUIRED 5
-#define COGGING_GAIN 1.2f   /* 补偿增益：1.0 实测（b3a6175）掉速谷值 -855、波动 ±8%
-                             * ——齿槽还有 ~20% 未抵消 → 1.2 补足 → 目标 ±5% 内 */
+#define COGGING_GAIN 1.0f   /* 补偿增益：1.2 实测失控（spd -4600 = 目标 3.8 倍）——学习表混入
+                             * 加速段/超速段大幅值，1.2 放大后超速刹车 +150 被 LUT -150 抵消
+                             * → 刹不住 → 失控。回 1.0 保 b3a6175 已验证的 ±8%；干净表见下 */
 
 static uint16 g_offA = 2050;
 static uint16 g_offB = 2044;
@@ -773,7 +774,13 @@ int core0_main(void)
                  * md=2 稳定闭环段（非 kick/boost 期）按机械角累计 g_iq_ref，
                  * 转满 COGGING_REVS_REQUIRED 圈 → 平均 → 减全局均值 → 启用前馈。 */
                 if (g_cog_state < 2 && g_kick == 0 && g_boost_cnt == 0
-                    && g_kick_fail < KICK_FAIL_MAX && fabsf(g_speed_ref) >= LOW_SPD_MAX)
+                    && g_kick_fail < KICK_FAIL_MAX && fabsf(g_speed_ref) >= LOW_SPD_MAX
+                    && fabsf(g_speed_meas) >= fabsf(g_speed_ref) * 0.8f   /* 转速已接近目标才学：
+                                                                           * 排除切环后加速段（g_iq_ref
+                                                                           * 持续 -150 限幅污染表） */
+                    && fabsf(g_speed_meas) <= fabsf(g_speed_ref) * 1.05f) /* 非超速段才学：排除刹车
+                                                                           * 正向值污染——否则超速刹车
+                                                                           * 会被 LUT 前馈抵消而失控 */
                 {
                     if (g_cog_state == 0)   /* 首次进入学习：清表 */
                     {
