@@ -61,6 +61,8 @@ static uint16 g_cog_revs = 0;                       /* 已学圈数 */
 static volatile uint8 g_cog_state = 0;              /* 0=off 1=learning 2=on */
 static volatile float32 g_cog_fb = 0;               /* ISR 补偿前馈值 */
 #define COGGING_REVS_REQUIRED 5
+#define COGGING_GAIN 1.2f   /* 补偿增益：1.0 实测（b3a6175）掉速谷值 -855、波动 ±8%
+                             * ——齿槽还有 ~20% 未抵消 → 1.2 补足 → 目标 ±5% 内 */
 
 static uint16 g_offA = 2050;
 static uint16 g_offB = 2044;
@@ -816,7 +818,7 @@ int core0_main(void)
                     /* 学习被打断（kick/堵转）：暂不计数，等恢复 */
                 }
                 /* 运行期补偿前馈值（ISR 读取） */
-                g_cog_fb = (g_cog_state == 2) ? g_cog_lut[(g_mech >> 6) & (COGGING_LUT_SIZE - 1)] : 0.0f;
+                g_cog_fb = (g_cog_state == 2) ? g_cog_lut[(g_mech >> 6) & (COGGING_LUT_SIZE - 1)] * COGGING_GAIN : 0.0f;
 
                 /* 堵转检测（仅中高速区 |sref|≥LOW_SPD_MAX；低速区已直接开环拖动）：
                  * spd≈0 且有给定 → 持续 200ms 触发慢速扫角脱困 */
