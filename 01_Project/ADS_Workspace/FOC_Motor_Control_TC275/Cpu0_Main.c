@@ -685,8 +685,8 @@ int core0_main(void)
                  * 到达目标后 new_iq 仍为负 → 稳态速度被顶到 ~17 rad/s（目标 8）且排不掉 → 超速+卡顿 */
                 if (fabsf(g_spd_ramp - g_speed_ref) < 0.05f && !windup) speed_integral += err_speed;
                 else if (fabsf(g_spd_ramp - g_speed_ref) >= 0.05f) speed_integral = 0.0f;
-                if (speed_integral > 800.0f) speed_integral = 800.0f;
-                if (speed_integral < -800.0f) speed_integral = -800.0f;
+                if (speed_integral > 1500.0f) speed_integral = 1500.0f;
+                if (speed_integral < -1500.0f) speed_integral = -1500.0f;
                 /* D 项（微分阻尼）：spd 快速变化时产生反向阻尼力矩，压摆动极限环。
                  * 实测无 D 项时摆动期 err 巨大 → 输出每次打满 ±30 限幅 → 满力矩来回摆
                  * （spd ±400 交替、vq 恒 -500 饱和，0.2~0.4s 周期），无收敛 → "左右晃幅度大" */
@@ -710,14 +710,9 @@ int core0_main(void)
                 else
                 {
                     new_iq = 1.0f * err_speed + 0.08f * speed_integral - 0.3f * spd_delta
-                           + g_speed_ref * 6.0f;   /* 稳态前馈维持力矩：云台齿槽力矩随位置
-                                                    * 大幅变化(0.3~1A+ 等效)——sref×2.75(-22
-                                                    * 码 0.25A)只在弱齿槽位维持住，硬位掉速停
-                                                    * (实测 -16.4k/-1390k/-140k 摆)。sref=-8
-                                                    * → -48 码 0.55A 覆盖中弱齿槽；超速分支
-                                                    * 保持纯 P 刹，前馈不干扰刹车。
-                                                    * Kp 2.0→1.0：方向翻转后 spd -800~-1600
-                                                    * 振荡(实测)系增益过高过冲 */
+                           + g_speed_ref * 13.0f;   /* 前馈 6.0→13.0（0.55A→1.2A 覆盖硬齿槽 1.15A，
+                                                    * 消除"掉速→预充1.7A冲出→又掉"无限循环=转两下停一下；
+                                                    * 积分限±1500 使 0.08×1500=120 码能平衡前馈锁目标） */
                 }
 
                 /* 力矩预充：spd 跌到低速且有给定 → 40ms 后满力矩冲齿槽。
