@@ -59,7 +59,6 @@ static volatile float32 g_id = 0, g_iq = 0, g_vd = 0, g_vq = 0;
 static volatile float32 g_id_filt = 0, g_iq_filt = 0;  /* 电流测量一阶低通：堵转大电流工况 duty 摆动致采样噪声大，
                                                         * 20 倍电流环增益会放大成 vd/vq 饱和振荡，必须先滤波 */
 static volatile uint16 g_rawA = 0, g_rawB = 0;
-static volatile uint16 g_rawD_A = 0, g_rawD_B = 0;   /* 延迟采样（闭环用）诊断对比 */
 static float32 s_dA = 0.25f, s_dB = 0.25f, s_dC = 0.25f;
 
 static volatile float32 g_speed_ref = 0.0f;     /* 目标转速 机械rad/s（旋钮给定），负=逆时针，打印×100 */
@@ -164,18 +163,8 @@ void FOC_PWM_ISR(void)
         uint16 ra = FOC_ADC_ReadRaw(7);
         uint16 rb = FOC_ADC_ReadRaw(6);
         g_rawA = ra; g_rawB = rb;
-        /* 【双采样诊断+修复】原采样点=T12=0（周期起点，恰逢三相换向瞬态 → md=2 段
-         * 电流读 0 → 电流环失效 → 转速无阻尼忽快忽慢）。延迟 ~1.5µs 再采一次避开
-         * 换向瞬态；闭环用延迟采样 ra_d/rb_d（换向假设成立则读数更真实，电流环复活）。
-         * 打印 ra 与 rdA 对比 → 一次定最优采样点。 */
-        volatile uint32 dly;
-        for (dly = 0; dly < 120; dly++) {}
-        FOC_ADC_StartSync();
-        uint16 ra_d = FOC_ADC_ReadRaw(7);
-        uint16 rb_d = FOC_ADC_ReadRaw(6);
-        g_rawD_A = ra_d; g_rawD_B = rb_d;
-        ia = (float32)(ra_d - g_offA) * CURRENT_DIR_A;
-        ib = (float32)(rb_d - g_offB) * CURRENT_DIR_B;
+        ia = (float32)(ra - g_offA) * CURRENT_DIR_A;
+        ib = (float32)(rb - g_offB) * CURRENT_DIR_B;
         ic = -(ia + ib);
     }
 
@@ -685,8 +674,8 @@ int core0_main(void)
                  * 到达目标后 new_iq 仍为负 → 稳态速度被顶到 ~17 rad/s（目标 8）且排不掉 → 超速+卡顿 */
                 if (fabsf(g_spd_ramp - g_speed_ref) < 0.05f && !windup) speed_integral += err_speed;
                 else if (fabsf(g_spd_ramp - g_speed_ref) >= 0.05f) speed_integral = 0.0f;
-                if (speed_integral > 1500.0f) speed_integral = 1500.0f;
-                if (speed_integral < -1500.0f) speed_integral = -1500.0f;
+                if (speed_integral > 800.0f) speed_integral = 800.0f;
+                if (speed_integral < -800.0f) speed_integral = -800.0f;
                 /* D 项（微分阻尼）：spd 快速变化时产生反向阻尼力矩，压摆动极限环。
                  * 实测无 D 项时摆动期 err 巨大 → 输出每次打满 ±30 限幅 → 满力矩来回摆
                  * （spd ±400 交替、vq 恒 -500 饱和，0.2~0.4s 周期），无收敛 → "左右晃幅度大" */
@@ -710,9 +699,14 @@ int core0_main(void)
                 else
                 {
                     new_iq = 1.0f * err_speed + 0.08f * speed_integral - 0.3f * spd_delta
-                           + g_speed_ref * 13.0f;   /* 前馈 6.0→13.0（0.55A→1.2A 覆盖硬齿槽 1.15A，
-                                                    * 消除"掉速→预充1.7A冲出→又掉"无限循环=转两下停一下；
-                                                    * 积分限±1500 使 0.08×1500=120 码能平衡前馈锁目标） */
+                           + g_speed_ref * 6.0f;   /* 稳态前馈维持力矩：云台齿槽力矩随位置
+                                                    * 大幅变化(0.3~1A+ 等效)——sref×2.75(-22
+                                                    * 码 0.25A)只在弱齿槽位维持住，硬位掉速停
+                                                    * (实测 -16.4k/-1390k/-140k 摆)。sref=-8
+                                                    * → -48 码 0.55A 覆盖中弱齿槽；超速分支
+                                                    * 保持纯 P 刹，前馈不干扰刹车。
+                                                    * Kp 2.0→1.0：方向翻转后 spd -800~-1600
+                                                    * 振荡(实测)系增益过高过冲 */
                 }
 
                 /* 力矩预充：spd 跌到低速且有给定 → 40ms 后满力矩冲齿槽。
@@ -795,16 +789,12 @@ int core0_main(void)
             FOC_UART_Print(" vq="); FOC_UART_PrintInt((sint32)(g_vq * 1000.0f));
             FOC_UART_Print(" ra="); FOC_UART_PrintInt((sint32)g_rawA);
             FOC_UART_Print(" rb="); FOC_UART_PrintInt((sint32)g_rawB);
-            FOC_UART_Print(" rdA="); FOC_UART_PrintInt((sint32)g_rawD_A);
-            FOC_UART_Print(" rdB="); FOC_UART_PrintInt((sint32)g_rawD_B);
             FOC_UART_Print(" spd="); FOC_UART_PrintInt((sint32)(g_speed_meas * 100.0f));
             FOC_UART_Print(" iqr="); FOC_UART_PrintInt((sint32)(g_kick ? g_sweep_iq : g_iq_ref));
             FOC_UART_Print(" sref="); FOC_UART_PrintInt((sint32)(g_speed_ref * 100.0f));
             FOC_UART_Print(" pot="); FOC_UART_PrintInt((sint32)g_pot_raw);
-            FOC_UART_Print(" k="); FOC_UART_PrintInt((sint32)g_kick); FOC_UART_Print(" da="); FOC_UART_PrintInt((sint32)(s_dA * 1000.0f)); FOC_UART_Print(" sp="); FOC_UART_PrintInt(0); /* baseline 无 SMP_PROT */
+            FOC_UART_Print(" k="); FOC_UART_PrintInt((sint32)g_kick);
             FOC_UART_Print("\r\n");
         }
     }
 }
-
-
