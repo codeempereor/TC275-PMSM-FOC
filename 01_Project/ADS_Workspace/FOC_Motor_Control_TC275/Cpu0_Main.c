@@ -353,7 +353,21 @@ void FOC_PWM_ISR(void)
     float32 dutyA, dutyB, dutyC;
     FOC_SVPWM(valpha, vbeta, &dutyA, &dutyB, &dutyC);
 
-    float32 duty_max = g_smp_prot ? 0.45f : DUTY_MAX;   /* 采样保护触发 → 降回 0.45 安全区 */
+    float32 duty_max;
+    if (g_foc_mode <= 1)
+    {
+        /* 预定位+I/f 开环拖启动：钳 0.45（低电压低噪声）。实测 0.80 → 19.2V
+         * 强磁场打抖磁编码器（ang 抖 24 码=0.026rad/5ms）→ sync 被噪声假填满 →
+         * 转子没转就切环（10/4 实测 SW th=-6423 el=-42）→ 启动失败；
+         * 0.45 → 10.8V 噪声小 → sync 真实累计 → 转子同步后切环（9/30 实测） */
+        duty_max = 0.45f;
+    }
+    else
+    {
+        /* 闭环/脱困：0.80 高电压余量（电流环不饱和 → 转速恒定）；
+         * 采样失效时 SMP_PROT 自动降回 0.45 兜底 */
+        duty_max = g_smp_prot ? 0.45f : DUTY_MAX;
+    }
     if (dutyA > duty_max) dutyA = duty_max; if (dutyA < 0.05f) dutyA = 0.05f;
     if (dutyB > duty_max) dutyB = duty_max; if (dutyB < 0.05f) dutyB = 0.05f;
     if (dutyC > duty_max) dutyC = duty_max; if (dutyC < 0.05f) dutyC = 0.05f;
