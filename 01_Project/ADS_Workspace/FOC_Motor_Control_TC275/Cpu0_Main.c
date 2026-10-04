@@ -48,6 +48,20 @@ static PID_t g_pid_q;
 static volatile float32 g_id_ref = 0.0f;
 static volatile float32 g_iq_ref = -200.0f;
 
+/* 齿槽力矩补偿 LUT（借鉴 SimpleFOC cogging lookup-table / ODrive anti-cogging）：
+ * 云台电机齿槽力矩随机械角大幅波动(0.3~1A+)，速度环被迫与齿槽搏斗 → 转速波动。
+ * 方案：闭环正常运行时按机械角累计速度环输出 iq（含齿槽响应），转满 5 圈平均生成
+ * 查表；运行阶段把"该位置相对平均的额外力矩需求"前馈进电流环给定 → 齿槽由 LUT
+ * 抵消，速度环只出平滑的平均力矩 → 转速恒定。校准自动进行，无需用户操作。 */
+#define COGGING_LUT_SIZE 256
+static float32 g_cog_lut[COGGING_LUT_SIZE] = {0};   /* 学习累加 → 运行表（相对平均差值） */
+static uint32 g_cog_cnt[COGGING_LUT_SIZE] = {0};    /* 每点采样计数 */
+static sint32 g_cog_prev_idx = -1;                  /* 圈数跟踪 */
+static uint16 g_cog_revs = 0;                       /* 已学圈数 */
+static volatile uint8 g_cog_state = 0;              /* 0=off 1=learning 2=on */
+static volatile float32 g_cog_fb = 0;               /* ISR 补偿前馈值 */
+#define COGGING_REVS_REQUIRED 5
+
 static uint16 g_offA = 2050;
 static uint16 g_offB = 2044;
 static uint16 g_offC = 2040;
@@ -322,7 +336,8 @@ void FOC_PWM_ISR(void)
          * 转子转起后反电动势升 → 电流自动回落（天然恒流）→ 可靠拖动。
          * vq=0 无 iq 扰动（iq 环追 0 会被采样尖峰打飞 → 抖） */
         vd = (g_foc_mode == 1) ? 0.7f : PID_Calc(&g_pid_d, g_id_ref, g_id_filt);
-        vq = (g_foc_mode == 1) ? 0.0f : PID_Calc(&g_pid_q, g_iq_ref, g_iq_filt);
+        vq = (g_foc_mode == 1) ? 0.0f : PID_Calc(&g_pid_q, g_iq_ref + g_cog_fb, g_iq_filt);  /* 齿槽
+                                                                    * 补偿前馈进 q 轴电流给定 */
         valpha = vd * cos_e - vq * sin_e;
         vbeta  = vd * sin_e + vq * cos_e;
         g_vd = vd;
@@ -751,6 +766,57 @@ int core0_main(void)
                 g_iq_ref += dq;
                 if (g_iq_ref > 150.0f) g_iq_ref = 150.0f;
                 if (g_iq_ref < -150.0f) g_iq_ref = -150.0f;
+
+                /* 齿槽 LUT 自动学习（运行中后台进行，无需用户操作）：
+                 * md=2 稳定闭环段（非 kick/boost 期）按机械角累计 g_iq_ref，
+                 * 转满 COGGING_REVS_REQUIRED 圈 → 平均 → 减全局均值 → 启用前馈。 */
+                if (g_cog_state < 2 && g_kick == 0 && g_boost_cnt == 0
+                    && g_kick_fail < KICK_FAIL_MAX && fabsf(g_speed_ref) >= LOW_SPD_MAX)
+                {
+                    if (g_cog_state == 0)   /* 首次进入学习：清表 */
+                    {
+                        g_cog_state = 1;
+                        for (int ci = 0; ci < COGGING_LUT_SIZE; ci++)
+                        {
+                            g_cog_lut[ci] = 0.0f;
+                            g_cog_cnt[ci] = 0;
+                        }
+                        g_cog_revs = 0;
+                        g_cog_prev_idx = -1;
+                    }
+                    sint32 cidx = (g_mech >> 6) & (COGGING_LUT_SIZE - 1);
+                    g_cog_lut[cidx] += g_iq_ref;
+                    if (g_cog_cnt[cidx] < 0xFFFFu) g_cog_cnt[cidx]++;
+                    if (g_cog_prev_idx >= 0)   /* 机械角递减：索引从 0 跳回 255 计 1 圈 */
+                    {
+                        if (cidx > g_cog_prev_idx) g_cog_revs++;
+                    }
+                    g_cog_prev_idx = cidx;
+                    if (g_cog_revs >= COGGING_REVS_REQUIRED)
+                    {
+                        float32 gsum = 0.0f;
+                        uint32 gcnt = 0;
+                        for (int ci = 0; ci < COGGING_LUT_SIZE; ci++)
+                        {
+                            if (g_cog_cnt[ci] > 0)
+                            {
+                                g_cog_lut[ci] /= g_cog_cnt[ci];
+                                gsum += g_cog_lut[ci];
+                                gcnt++;
+                            }
+                        }
+                        if (gcnt > 0) gsum /= (float32)gcnt;
+                        for (int ci = 0; ci < COGGING_LUT_SIZE; ci++)
+                            g_cog_lut[ci] -= gsum;   /* 存相对平均差值 */
+                        g_cog_state = 2;             /* 启用补偿 */
+                    }
+                }
+                else if (g_cog_state == 1)
+                {
+                    /* 学习被打断（kick/堵转）：暂不计数，等恢复 */
+                }
+                /* 运行期补偿前馈值（ISR 读取） */
+                g_cog_fb = (g_cog_state == 2) ? g_cog_lut[(g_mech >> 6) & (COGGING_LUT_SIZE - 1)] : 0.0f;
 
                 /* 堵转检测（仅中高速区 |sref|≥LOW_SPD_MAX；低速区已直接开环拖动）：
                  * spd≈0 且有给定 → 持续 200ms 触发慢速扫角脱困 */
