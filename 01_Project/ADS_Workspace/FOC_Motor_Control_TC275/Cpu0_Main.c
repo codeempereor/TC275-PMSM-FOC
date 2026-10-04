@@ -144,7 +144,9 @@ static uint16 g_pole_chk_cnt = 0;              /* 磁极方向自检连续窗计
  *         扰动被压住 → 转速恒定；
  *       ④采样原始值范围保护：raw 持续超限 500ms → 自动降 duty 至 0.45 +
  *         UART 告警，恢复 1s 后自动复原（防高 duty 采样失效失控，兜底）。 */
-#define DUTY_MAX       0.80f   /* duty 钳位上限（低侧窗口 4us，两相采样安全值） */
+#define DUTY_MAX       0.85f   /* duty 钳位上限（低侧窗口 3.75us，两相采样+三相转换余量尚可；
+                                * 采样失效 SMP_PROT 自动降 0.45 兜底）。0.80 实测 19.2V 电流
+                                * 仅 ~0.3A 拖不动深齿槽（5660b0e）→ 提至 20.4V */
 #define VOLT_MAX       0.80f   /* 电流环电压标幺上限（PID outMax，SVPWM duty 同步） */
 #define RAW_LIM_HI     3500    /* 采样 raw 合理上限（2048±1548，超限=采样失效） */
 #define RAW_LIM_LO     500     /* 采样 raw 合理下限 */
@@ -241,9 +243,12 @@ void FOC_PWM_ISR(void)
             g_el_prev_if = g_elec_angle;
             if (el_delta > PI) el_delta -= TWO_PI;
             if (el_delta < -PI) el_delta += TWO_PI;
-            g_if_travel += fabsf(el_delta);   /* 转子电角总行程：真实转动才累计
-                                               * （噪声 ±24 码 → 5ms 0.026rad → 1.1s 累计
-                                               * ~0.1rad << 0.5 → 假 sync 永远切不了环） */
+            /* 转子沿磁场方向净位移（带符号累计）：抖动/微动来回抵消 → 永不达标；
+             * 只有磁场真正拖动转子（同向持续转）才累计 → 切环必真转。
+             * fabsf 版本被抖动喂满（5660b0e 实测 0.80 强磁场齿槽位 ±20 码微动
+             * ~0.02rad/窗，12.5s 抖动累计 ≥0.5 → 假切环 SW el=34） */
+            if (dir_if > 0.0f) g_if_travel += el_delta;
+            else               g_if_travel -= el_delta;
             if (dir_if * el_delta > 0.001f)
             {
                 if (g_if_sync_cnt < 50) g_if_sync_cnt++;   /* 累计制：抖动时偶发反向不再清零，
