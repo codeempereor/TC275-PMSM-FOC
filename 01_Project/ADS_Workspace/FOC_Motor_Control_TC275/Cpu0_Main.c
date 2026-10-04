@@ -205,6 +205,13 @@ void FOC_PWM_ISR(void)
         {
             g_prepos_cnt = 0;
             g_foc_mode = 1;
+            /* 磁场从转子实际电角出发：齿槽强时 prepos 的 2.3A 静态磁场拉不到位
+             * （PREPOS_SAMPLES 注释：每次上电停在不同齿槽位→磁极方向随机），
+             * 本次实测转子停在 3.06 rad≈175°，而 I/f 磁场从 θ_i=0 扫 →
+             * 磁场与转子反相 → sin(负载角)≈0 → 力矩≈0 → 转子拖不动
+             * （ang 恒定 3064、SW th=-6428 el=3048 假同步切环）。
+             * 从转子位出发 → 磁场对齐起步 → 旋转自然建立负载角 → 必拖得动 */
+            g_theta_i = g_elec_angle;
             g_omega_i = OMEGA_MIN;
         }
     }
