@@ -77,6 +77,8 @@ static float32 g_el_prev_if = 0.0f; /* 上一校验窗口电角 */
 static uint32 g_if_sync_cnt = 0;    /* 连续同步窗口数（≥8 才允许切环） */
 static uint32 g_if_stall_cnt = 0;   /* 同步失败连续窗口数（≥20 → 磁极反，翻 π 重试） */
 static uint32 g_if_flip_cnt = 0;    /* 翻 π 重试次数（限 3） */
+static float32 g_if_travel = 0.0f;  /* I/f 段转子电角总行程（切环须 ≥0.5 电rad：
+                                     * 噪声/微动抖不出 0.5 → 杜绝假 sync 切环） */
 static uint32 g_ovspd_cnt = 0;      /* 闭环超速失控窗口计数（≥20 → 停机翻 π 重启） */
 static uint32 g_boost_cnt = 0;      /* 切环力矩 boost 剩余主循环窗数：150ms 冲出齿槽 */
 static float32 speed_integral = 0.0f;
@@ -207,12 +209,13 @@ void FOC_PWM_ISR(void)
             g_foc_mode = 1;
             /* 磁场从转子实际电角出发：齿槽强时 prepos 的 2.3A 静态磁场拉不到位
              * （PREPOS_SAMPLES 注释：每次上电停在不同齿槽位→磁极方向随机），
-             * 本次实测转子停在 3.06 rad≈175°，而 I/f 磁场从 θ_i=0 扫 →
-             * 磁场与转子反相 → sin(负载角)≈0 → 力矩≈0 → 转子拖不动
-             * （ang 恒定 3064、SW th=-6428 el=3048 假同步切环）。
-             * 从转子位出发 → 磁场对齐起步 → 旋转自然建立负载角 → 必拖得动 */
+             * 实测转子停在 3.06 rad≈175° 时磁场从 0 扫 → 反相 → sin(负载角)≈0
+             * → 力矩≈0 拖不动。从转子位出发 → 对齐起步 → 旋转自然建立负载角 */
             g_theta_i = g_elec_angle;
             g_omega_i = OMEGA_MIN;
+            g_if_sync_cnt = 0;
+            g_if_stall_cnt = 0;
+            g_if_travel = 0.0f;   /* 新启动行程清零：切环判据从 0 累计 */
         }
     }
     else if (g_foc_mode == 1)
@@ -238,6 +241,9 @@ void FOC_PWM_ISR(void)
             g_el_prev_if = g_elec_angle;
             if (el_delta > PI) el_delta -= TWO_PI;
             if (el_delta < -PI) el_delta += TWO_PI;
+            g_if_travel += fabsf(el_delta);   /* 转子电角总行程：真实转动才累计
+                                               * （噪声 ±24 码 → 5ms 0.026rad → 1.1s 累计
+                                               * ~0.1rad << 0.5 → 假 sync 永远切不了环） */
             if (dir_if * el_delta > 0.001f)
             {
                 if (g_if_sync_cnt < 50) g_if_sync_cnt++;   /* 累计制：抖动时偶发反向不再清零，
@@ -255,8 +261,12 @@ void FOC_PWM_ISR(void)
          * ②spd 由 5ms 编码器增量测出，转子 2 rad/s 时窗内仅 ~26 码，噪声使
          * 读数频繁 <1.0 → 同样永卡。sync 累计本身已证明转子同步且在转，
          * 是唯一可靠判据；切环有 boost+预充+ramp 锁目标保护过渡 */
-        if (g_omega_i >= OMEGA_MAX && g_if_sync_cnt >= 20)
+        if (g_omega_i >= OMEGA_MAX && g_if_sync_cnt >= 20 && g_if_travel >= 0.5f)
         {
+            /* 切环三重判据：磁场满速 + 方向同步 ≥20 + 转子真实行程 ≥0.5 电rad。
+             * 行程判据新增（1339811 实测）：0.45 钳位 0.17A 拖不动深齿槽 → 转子不动
+             * → 噪声把 sync 喂满 20 → 假切环（SW el=164）→ md=2 预充硬推 1.7 圈后
+             * EMF 吃电压掉速卡 10700 位。行程≥0.5 保证切环时转子已真转，md=2 平滑接管 */
             g_foc_mode = 2;
             g_id_ref = 0.0f;
             g_iq_ref = -20.0f;   /* 切闭环直接给稳态力矩（0.23A）：I/f 8.5 → 目标 8 只需微减速，
@@ -289,6 +299,7 @@ void FOC_PWM_ISR(void)
             g_omega_i = OMEGA_MIN;
             g_if_sync_cnt = 0;
             g_if_stall_cnt = 0;
+            g_if_travel = 0.0f;
         }
     }
 
@@ -360,21 +371,14 @@ void FOC_PWM_ISR(void)
     float32 dutyA, dutyB, dutyC;
     FOC_SVPWM(valpha, vbeta, &dutyA, &dutyB, &dutyC);
 
-    float32 duty_max;
-    if (g_foc_mode <= 1)
-    {
-        /* 预定位+I/f 开环拖启动：钳 0.45（低电压低噪声）。实测 0.80 → 19.2V
-         * 强磁场打抖磁编码器（ang 抖 24 码=0.026rad/5ms）→ sync 被噪声假填满 →
-         * 转子没转就切环（10/4 实测 SW th=-6423 el=-42）→ 启动失败；
-         * 0.45 → 10.8V 噪声小 → sync 真实累计 → 转子同步后切环（9/30 实测） */
-        duty_max = 0.45f;
-    }
-    else
-    {
-        /* 闭环/脱困：0.80 高电压余量（电流环不饱和 → 转速恒定）；
-         * 采样失效时 SMP_PROT 自动降回 0.45 兜底 */
-        duty_max = g_smp_prot ? 0.45f : DUTY_MAX;
-    }
+    /* 统一放开到 DUTY_MAX=0.80（I/f 启动 + 闭环）：
+     * 0.45 钳位电流仅 ~0.17A（24V 母线×云台电机大内阻）→ 力矩 < 深齿槽位 →
+     * 转子拖不动（1339811 实测 ang 恒定 168、假 sync 切环、md=2 预充推 1.7 圈后
+     * EMF 吃电压掉速卡 10700 位）。
+     * 0.80 → 19.2V → 0.3A 级 → 力矩倍增 → 深齿槽也能牵入。
+     * 0.80 历史失败（10/4 的 0.80 全局版）根因是"假 sync 切环"（转子没转噪声喂满
+     * sync 计数）→ 已由下方切环行程判据（g_if_travel≥0.5 电rad）从根上杜绝 → 0.80 安全 */
+    float32 duty_max = g_smp_prot ? 0.45f : DUTY_MAX;
     if (dutyA > duty_max) dutyA = duty_max; if (dutyA < 0.05f) dutyA = 0.05f;
     if (dutyB > duty_max) dutyB = duty_max; if (dutyB < 0.05f) dutyB = 0.05f;
     if (dutyC > duty_max) dutyC = duty_max; if (dutyC < 0.05f) dutyC = 0.05f;
@@ -727,6 +731,7 @@ int core0_main(void)
                         g_if_flip_cnt = 0;
                         g_if_sync_cnt = 0;
                         g_if_stall_cnt = 0;
+                        g_if_travel = 0.0f;
                         g_spd_ramp = g_speed_ref;
                     }
                 }
