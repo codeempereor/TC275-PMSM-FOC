@@ -76,7 +76,12 @@ void FOC_ADC_Init(void)
      * 低侧分流窗口（duty 0.80 → 4us）内容纳得下转换（2 通道 ~1.2-2us）。
      * 旧 mask 含 5/6/7：第三通道白白转换 0.6-1us → duty 0.45 窗口 13.75us
      * 无感，但 duty 放开后窗口收窄即采样出界（历史 0.9 失效根因）。 */
-    uint32 channelMask = (1 << 6) | (1 << 7);
+    /* 【诊断版临时】恢复三相扫描 mask（5/6/7）：
+     * 10/4 改两相（6/7）后 A 相(ch7)采样点提前 ~1µs（少一个通道转换时间），
+     * 若 A 相读数系统性偏小（9/30 三相时代 ra≈2600/1.3A，10/4 两相时代
+     * ra≈2050/0.3A，同电压差 4 倍）→ 采样点错位实锤 → 恢复本行即可定位。
+     * 验证后恢复两相需改回：(1 << 6) | (1 << 7) */
+    uint32 channelMask = (1 << 5) | (1 << 6) | (1 << 7);
     IfxVadc_Adc_setScan(&s_group4, channelMask, channelMask);
 
     IfxVadc_Adc_startScan(&s_group4);

@@ -383,7 +383,9 @@ void FOC_PWM_ISR(void)
      * 0.80 → 19.2V → 0.3A 级 → 力矩倍增 → 深齿槽也能牵入。
      * 0.80 历史失败（10/4 的 0.80 全局版）根因是"假 sync 切环"（转子没转噪声喂满
      * sync 计数）→ 已由下方切环行程判据（g_if_travel≥0.5 电rad）从根上杜绝 → 0.80 安全 */
-    float32 duty_max = g_smp_prot ? 0.45f : DUTY_MAX;
+    /* 【诊断版临时】禁用 SMP_PROT：排除"采样保护偷降 0.45"干扰，纯看 0.85 输出与电流关系。
+     * 恢复正常版时改回：float32 duty_max = g_smp_prot ? 0.45f : DUTY_MAX; */
+    float32 duty_max = DUTY_MAX;
     if (dutyA > duty_max) dutyA = duty_max; if (dutyA < 0.05f) dutyA = 0.05f;
     if (dutyB > duty_max) dutyB = duty_max; if (dutyB < 0.05f) dutyB = 0.05f;
     if (dutyC > duty_max) dutyC = duty_max; if (dutyC < 0.05f) dutyC = 0.05f;
@@ -877,6 +879,10 @@ int core0_main(void)
             FOC_UART_Print(" sref="); FOC_UART_PrintInt((sint32)(g_speed_ref * 100.0f));
             FOC_UART_Print(" pot="); FOC_UART_PrintInt((sint32)g_pot_raw);
             FOC_UART_Print(" k="); FOC_UART_PrintInt((sint32)g_kick);
+            /* 诊断版新增：da=钳位后实际 duty（×1000，验证 0.85 是否真输出）、
+             * sp=SMP_PROT 状态（0=未触发，1=已降 0.45） */
+            FOC_UART_Print(" da="); FOC_UART_PrintInt((sint32)(s_dA * 1000.0f));
+            FOC_UART_Print(" sp="); FOC_UART_PrintInt((sint32)g_smp_prot);
             FOC_UART_Print("\r\n");
         }
     }
