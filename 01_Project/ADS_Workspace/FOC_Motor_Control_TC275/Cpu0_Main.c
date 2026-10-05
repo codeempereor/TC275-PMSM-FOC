@@ -775,12 +775,17 @@ int core0_main(void)
                  * 转满 COGGING_REVS_REQUIRED 圈 → 平均 → 减全局均值 → 启用前馈。 */
                 if (g_cog_state < 2 && g_kick == 0 && g_boost_cnt == 0
                     && g_kick_fail < KICK_FAIL_MAX && fabsf(g_speed_ref) >= LOW_SPD_MAX
-                    && fabsf(g_speed_meas) >= fabsf(g_speed_ref) * 0.8f   /* 转速已接近目标才学：
-                                                                           * 排除切环后加速段（g_iq_ref
-                                                                           * 持续 -150 限幅污染表） */
-                    && fabsf(g_speed_meas) <= fabsf(g_speed_ref) * 1.05f) /* 非超速段才学：排除刹车
-                                                                           * 正向值污染——否则超速刹车
-                                                                           * 会被 LUT 前馈抵消而失控 */
+                    && fabsf(g_speed_meas) >= fabsf(g_speed_ref) * 0.3f   /* 排除切环后加速段污染
+                                                                           * （spd 远低于目标，g_iq_ref
+                                                                           * 持续限幅） */
+                    && fabsf(g_speed_meas) <= fabsf(g_speed_ref) * 1.5f) /* 排除强超速段污染
+                                                                           * （刹车正向值混入表会
+                                                                           * 抵消刹车而失控）。
+                                                                           * 窗口 0.3~1.5 兼顾全速段：
+                                                                           * 8d4725f 用 0.8~1.05 过严——8 rad/s
+                                                                           * 时 spd 常超 1.05×799=839 → 样本
+                                                                           * 几乎为零 → LUT 学不满 5 圈 →
+                                                                           * 从未启用 → 低速齿槽卡死 */
                 {
                     if (g_cog_state == 0)   /* 首次进入学习：清表 */
                     {
