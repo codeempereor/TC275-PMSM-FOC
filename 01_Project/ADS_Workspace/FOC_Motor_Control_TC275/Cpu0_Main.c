@@ -949,18 +949,20 @@ int core0_main(void)
                 {
                     /* 学习被打断（kick/堵转）：暂不计数，等恢复 */
                 }
-                /* 标定记录：0.85~1.15×|sref| 稳态窗（v9 从 0.3~1.5 收窄）——
-                 * v8 实测 CALIB_DONE 覆盖的 2.5 圈 = 加速段 +1.5 圈（iq_ref -90~-107）
-                 * + 掉速段 -1.0 圈（iq_ref -64~-110）→ 全程无稳态 → 加速/制动电流
-                 * 混入表 → 表≈速度环均值+噪声 → 启用后波动仍 ±9%（-1097~-1318）。
-                 * 0.85~1.15 只采真稳态：无表期波动已实测在 [1097,1318] ⊂ [1018,1378]，
-                 * 命中率高；稳态 2 圈 ≈ 17 行（cidx 回绕计数每圈 1 次）≈ 1 秒完成。
-                 * 超速段（>1.15×）与掉速/预充段（<0.85× 或 iq 饱和）自动排除 */
+                /* 标定记录：0.85~1.15×|sref| 稳态窗 + 斜坡跟随门（v10 加）——
+                 * v8 实测 CALIB_DONE 在加速+掉速段完成 → 表污染 → ±9%；
+                 * v9 收窄到 0.85~1.15 仍被加速穿越段混入（-1285 行 iq_ref 混合
+                 * 刹车/加速电流）→ 表启用后反而掉速趋停（-1211→0 反补偿）。
+                 * |meas-ramp|<1.0：切环瞬间 ramp 已锁 -1198，加速段 meas 全程远离
+                 * ramp（-69→-1285 vs -1198）→ 只在接近目标时才记录（diff<1）；
+                 * 掉速段（-907 离 ramp 2.9）与超速段（-1589 离 3.9）自动排除；
+                 * 稳态波动（±0.1~0.2）全部通过。加速穿越仅 1-2 行 → 污染可忽略 */
                 if (g_calib_state == 1)
                 {
                     sint32 cidx = (g_mech >> 6) & (COGGING_LUT_SIZE - 1);
                     if (fabsf(g_speed_meas) >= fabsf(g_speed_ref) * 0.85f
                         && fabsf(g_speed_meas) <= fabsf(g_speed_ref) * 1.15f
+                        && fabsf(g_speed_meas - g_spd_ramp) < 1.0f
                         && fabsf(g_iq_ref) < 120.0f && g_kick == 0 && g_boost_cnt == 0
                         && g_speed_meas * g_speed_ref > 0.0f)   /* 方向一致才记录：
                                                                  * 切环正冲/反向段电流是制动或
@@ -1005,7 +1007,11 @@ int core0_main(void)
                     }
                 }
                 /* 运行期补偿前馈值（ISR 读取） */
-                g_cog_fb = (g_cog_state == 2) ? g_cog_lut[(g_mech >> 6) & (COGGING_LUT_SIZE - 1)] * COGGING_GAIN : 0.0f;
+                /* v10：kick/sweep/boost 期间禁齿槽前馈——v9 实测堵转 sweep 直推
+                 * 1.7A 25+ 行推不动（ang 恒定），元凶=污染表 cog_fb 叠加到 iq_ref
+                 * 抵消直推电流；脱困/boost 用满额电流，表只在正常速度环段参与 */
+                g_cog_fb = (g_cog_state == 2 && g_kick == 0 && g_boost_cnt == 0)
+                         ? g_cog_lut[(g_mech >> 6) & (COGGING_LUT_SIZE - 1)] * COGGING_GAIN : 0.0f;
 
                 /* 堵转检测（仅中高速区 |sref|≥LOW_SPD_MAX；低速区已直接开环拖动）：
                  * spd≈0 且有给定 → 持续 200ms 触发慢速扫角脱困 */
