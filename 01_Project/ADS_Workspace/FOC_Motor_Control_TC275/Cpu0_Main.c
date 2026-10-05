@@ -697,12 +697,14 @@ int core0_main(void)
                 {
                     g_ovspd_cnt = 0;
                 }
-                /* 治本标定：切环稳态（md=2、速度环已收敛、非 kick/boost）进入标定——
+                /* 治本标定：切环后（md=2、电机已转起、非 kick/boost）进入标定——
                  * 清表、占位 g_cog_state=1（防现有 5 圈学习清表覆盖）。
-                 * 不锁目标：电机按旋钮正常跑，稳态段自然记录（避免阶跃失控） */
+                 * 不锁目标：电机按旋钮正常跑；记录窗口 0.3~1.5×|sref|（同 1162bb6
+                 * 已验证学习窗口）——无表期波动循环（掉速-冲出）中也能 2 圈快速完成，
+                 * 避免 e73ae40 窄窗口（|spd-ramp|<1）卡死永不启用 → 无表一顿一顿 */
                 if (g_calib_state == 0 && g_foc_mode == 2 && g_kick == 0 && g_boost_cnt == 0
                     && g_kick_fail < KICK_FAIL_MAX && fabsf(g_speed_ref) >= LOW_SPD_MAX
-                    && fabsf(g_speed_meas - g_spd_ramp) < CALIB_STEADY_WIN)
+                    && fabsf(g_speed_meas) >= fabsf(g_speed_ref) * 0.3f)
                 {
                     for (int ci = 0; ci < COGGING_LUT_SIZE; ci++)
                     {
@@ -869,12 +871,15 @@ int core0_main(void)
                 {
                     /* 学习被打断（kick/堵转）：暂不计数，等恢复 */
                 }
-                /* 标定记录：稳态段（spd 跟随 ramp、iq 未饱和）电流 → 表；
+                /* 标定记录：0.3~1.5×|sref| 窗口（同 1162bb6 已验证学习窗口）——
+                 * 超速刹车段（>1.5×）与预充/堵转段（<0.3× 或 iq 饱和）自动排除；
+                 * 波动循环中掉速-冲出对称，平均后动态分量抵消 → 表≈齿槽差值。
                  * 2 圈 → 平均 → 减全局均值 → 启用齿槽前馈 */
                 if (g_calib_state == 1)
                 {
                     sint32 cidx = (g_mech >> 6) & (COGGING_LUT_SIZE - 1);
-                    if (fabsf(g_speed_meas - g_spd_ramp) < CALIB_STEADY_WIN
+                    if (fabsf(g_speed_meas) >= fabsf(g_speed_ref) * 0.3f
+                        && fabsf(g_speed_meas) <= fabsf(g_speed_ref) * 1.5f
                         && fabsf(g_iq_ref) < 120.0f && g_kick == 0 && g_boost_cnt == 0)
                     {
                         g_cog_lut[cidx] += g_iq_ref;
