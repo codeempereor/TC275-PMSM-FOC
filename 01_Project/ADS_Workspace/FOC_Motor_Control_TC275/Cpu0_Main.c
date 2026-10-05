@@ -65,15 +65,14 @@ static volatile float32 g_cog_fb = 0;               /* ISR 补偿前馈值 */
                              * 加速段/超速段大幅值，1.2 放大后超速刹车 +150 被 LUT -150 抵消
                              * → 刹不住 → 失控。回 1.0 保 b3a6175 已验证的 ±8%；干净表见下 */
 
-/* ---- 治本第 1 步：低速爬行标定（精确齿槽表，替代 5 圈学习） ----
- * 原理：切环后闭环 10 rad/s 匀速爬行 2 圈（≥LOW_SPD_MAX=4 走速度环），
- * 匀速段（无超速/预充/饱和）电流 ≈ 前馈 + 齿槽响应 → 减均值 = 齿槽差值表。
- * 无 5 圈学习"加速段/刹车段污染"缺陷（c257a05 实测：表污染 → 超速处负补偿
- * 抵消刹车 → 刹不住冲到 -1759 → 掉速趋停 → 正反馈崩溃），表质量高 → 全速段有效。 */
-#define CALIB_CRAWL_SPD   (-1000.0f)  /* 10 rad/s：闭环区（>4 rad/s）且齿槽影响仍可测 */
-#define CALIB_REVS_NEED   2           /* 2 圈 ≈ 33s（16384 码/1000 码/s） */
-#define CALIB_REC_LO      850.0f      /* 匀速窗口 |spd| ∈ [0.85,1.15]×1000 */
-#define CALIB_REC_HI      1150.0f
+/* ---- 治本第 1 步：稳态爬行标定（精确齿槽表，替代 5 圈学习） ----
+ * 原理：切环后速度环已收敛（spd 跟随 ramp）→ 稳态匀速段电流 ≈ 前馈 + 齿槽
+ * 响应 → 减均值 = 齿槽差值表。不锁目标（避免 7652541 阶跃失控：切环加速段强行
+ * 锁 -1000 → 正转 +692 被拉向负 → 180° 大阶跃 → 过冲 → 高速丢码 → 电角跳变
+ * → 电流方向反 → 正反馈加速 -6955）；只在"稳态 + 中高速（速度环生效）"记录
+ * → 表纯净无污染。 */
+#define CALIB_REVS_NEED   2           /* 2 圈（任意目标速度，时长随旋钮档位） */
+#define CALIB_STEADY_WIN  100.0f      /* 稳态窗口：|spd - ramp| < 1 rad/s */
 static volatile uint8  g_calib_state = 0;   /* 0=off 1=爬行标定 2=完成 */
 static uint16          g_calib_revs = 0;
 static sint32          g_calib_prev_idx = -1;
@@ -692,10 +691,12 @@ int core0_main(void)
                 {
                     g_ovspd_cnt = 0;
                 }
-                /* 治本标定：切环稳态（md=2、非 kick/boost）进入爬行标定——
-                 * 清表、占位 g_cog_state=1（防现有 5 圈学习清表覆盖）、锁爬行目标 */
+                /* 治本标定：切环稳态（md=2、速度环已收敛、非 kick/boost）进入标定——
+                 * 清表、占位 g_cog_state=1（防现有 5 圈学习清表覆盖）。
+                 * 不锁目标：电机按旋钮正常跑，稳态段自然记录（避免阶跃失控） */
                 if (g_calib_state == 0 && g_foc_mode == 2 && g_kick == 0 && g_boost_cnt == 0
-                    && g_kick_fail < KICK_FAIL_MAX)
+                    && g_kick_fail < KICK_FAIL_MAX && fabsf(g_speed_ref) >= LOW_SPD_MAX
+                    && fabsf(g_speed_meas - g_spd_ramp) < CALIB_STEADY_WIN)
                 {
                     for (int ci = 0; ci < COGGING_LUT_SIZE; ci++)
                     {
@@ -707,8 +708,6 @@ int core0_main(void)
                     g_calib_prev_idx = -1;
                     g_calib_state = 1;
                 }
-                if (g_calib_state == 1) g_speed_ref = CALIB_CRAWL_SPD;  /* 爬行期锁目标（本 ISR 生效，
-                                                                          * 主循环旋钮映射每 ISR 被覆盖） */
 
                 /* 速度环目标斜坡：每 5ms 爬 0.15 rad/s（30 rad/s²），目标 8 需 0.27s。
                  * 启动时误差始终小 → 力矩温和 → 不过冲不反向振荡 */
@@ -864,12 +863,12 @@ int core0_main(void)
                 {
                     /* 学习被打断（kick/堵转）：暂不计数，等恢复 */
                 }
-                /* 标定记录：匀速段（|spd|∈[850,1150] 且 iq 未饱和）电流 → 表；
+                /* 标定记录：稳态段（spd 跟随 ramp、iq 未饱和）电流 → 表；
                  * 2 圈 → 平均 → 减全局均值 → 启用齿槽前馈 */
                 if (g_calib_state == 1)
                 {
                     sint32 cidx = (g_mech >> 6) & (COGGING_LUT_SIZE - 1);
-                    if (fabsf(g_speed_meas) > CALIB_REC_LO && fabsf(g_speed_meas) < CALIB_REC_HI
+                    if (fabsf(g_speed_meas - g_spd_ramp) < CALIB_STEADY_WIN
                         && fabsf(g_iq_ref) < 120.0f && g_kick == 0 && g_boost_cnt == 0)
                     {
                         g_cog_lut[cidx] += g_iq_ref;
