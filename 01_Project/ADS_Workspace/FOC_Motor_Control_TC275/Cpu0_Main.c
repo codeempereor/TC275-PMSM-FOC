@@ -76,8 +76,6 @@ static volatile float32 g_cog_fb = 0;               /* ISR 补偿前馈值 */
 static volatile uint8  g_calib_state = 0;   /* 0=off 1=爬行标定 2=完成 */
 static uint16          g_calib_revs = 0;
 static sint32          g_calib_prev_idx = -1;
-static uint16          g_calib_covered = 0;   /* 已覆盖表索引数（方向无关圈数判据） */
-static uint32          g_calib_total_cnt = 0; /* 标定记录总样本数 */
 
 static uint16 g_offA = 2050;
 static uint16 g_offB = 2044;
@@ -743,8 +741,6 @@ int core0_main(void)
                         g_calib_state = 0;
                         g_cog_state = 0;
                         g_calib_revs = 0;
-                        g_calib_covered = 0;
-                        g_calib_total_cnt = 0;
                         g_calib_prev_idx = -1;
                         g_cog_revs = 0;
                         g_cog_prev_idx = -1;
@@ -776,8 +772,6 @@ int core0_main(void)
                     }
                     g_cog_state = 1;
                     g_calib_revs = 0;
-                    g_calib_covered = 0;
-                    g_calib_total_cnt = 0;
                     g_calib_prev_idx = -1;
                     g_calib_state = 1;
                 }
@@ -953,17 +947,20 @@ int core0_main(void)
                                                                  * 反而加剧摆动） */
                     {
                         g_cog_lut[cidx] += g_iq_ref;
-                        if (g_cog_cnt[cidx] == 0) g_calib_covered++; /* 首次覆盖该索引
-                                                                      * （方向无关圈数判据） */
                         if (g_cog_cnt[cidx] < 0xFFFFu) g_cog_cnt[cidx]++;
-                        g_calib_total_cnt++;
+                        /* 双向回绕计数：cidx 递减（负转）回绕 255→0 或递增（正转）
+                         * 回绕 0→255 均计 1 圈（|d|>64 只可能是回绕——正常帧差 1-2 格、
+                         * 翻 π 平移 12.8 格都不计）。正转/负转都正确 2 圈完成；
+                         * 旧 cidx>prev 只对负转计数（正转每次递增都误计），
+                         * v6 覆盖计数又过严（采样间隔 ~1.3 格 → 覆盖满 256 需
+                         * ~16 圈 → 稳态 10 圈都完不成）→ 均否决 */
+                        if (g_calib_prev_idx >= 0)
+                        {
+                            sint32 d = cidx - g_calib_prev_idx;
+                            if (d > 64 || d < -64) g_calib_revs++;
+                        }
                         g_calib_prev_idx = cidx;
-                        /* 覆盖满 256 索引（1 圈全覆盖）且总样本 ≥ 256×2（2 圈量）
-                         * → 表覆盖完整、噪声平均充分。正转/负转/回绕均正确，
-                         * 不受切环正冲影响（旧 cidx>prev 判据在正转时每次记录都
-                         * 计数 → 不到 1 圈就误判 2 圈完成 → 表=半圈数据污染） */
-                        if (g_calib_covered >= COGGING_LUT_SIZE
-                            && g_calib_total_cnt >= (uint32)COGGING_LUT_SIZE * CALIB_REVS_NEED)
+                        if (g_calib_revs >= CALIB_REVS_NEED)
                         {
                             float32 gsum = 0.0f;
                             uint32 gcnt = 0;
