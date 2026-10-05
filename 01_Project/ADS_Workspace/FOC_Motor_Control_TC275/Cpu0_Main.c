@@ -712,11 +712,12 @@ int core0_main(void)
                 if ((g_spd_ramp < 0.0f && g_speed_meas < g_spd_ramp - 0.5f) ||
                     (g_spd_ramp > 0.0f && g_speed_meas > g_spd_ramp + 0.5f))
                 {
-                    new_iq = 2.5f * err_speed - 0.3f * spd_delta;   /* 刹车 1.5→2.5：纯基线实测超速段
-                                                                     * iqr 仅 +5~8（0.06-0.09A）刹不住，
-                                                                     * spd -1345 需 ~10 行才回落 → 波动周期
-                                                                     * ~0.5s（忽快忽慢）。加强刹车 → 超速
-                                                                     * 回落快 → 波动窗口小 */
+                    /* 刹车增益分段：中高速 2.5（已验证 ±6~12%）；低速 |sref|<900 用 3.5——
+                     * 低速实测（1162bb6，sref=-888）超速 -984 → 刹车 2.5 压不深 → 掉速到
+                     * ~-100（趋停）→ 拉回 → ±25% 循环。3.5 更强压回 → 循环收窄。
+                     * 中高速保持 2.5 不动，避免破坏已验证表现。 */
+                    float32 brk = (fabsf(g_speed_ref) < 900.0f) ? 3.5f : 2.5f;
+                    new_iq = brk * err_speed - 0.3f * spd_delta;
                 }
                 else
                 {
