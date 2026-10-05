@@ -76,6 +76,8 @@ static volatile float32 g_cog_fb = 0;               /* ISR 补偿前馈值 */
 static volatile uint8  g_calib_state = 0;   /* 0=off 1=爬行标定 2=完成 */
 static uint16          g_calib_revs = 0;
 static sint32          g_calib_prev_idx = -1;
+static uint16          g_calib_covered = 0;   /* 已覆盖表索引数（方向无关圈数判据） */
+static uint32          g_calib_total_cnt = 0; /* 标定记录总样本数 */
 
 static uint16 g_offA = 2050;
 static uint16 g_offB = 2044;
@@ -689,6 +691,25 @@ int core0_main(void)
                     {
                         g_pole_chk_cnt = 0;
                         g_mech += (sint32)ENCODER_RESOLUTION / MOTOR_POLE_PAIRS / 2;  /* 磁极反 → 翻 π */
+                        /* 翻 π 使表索引偏移 819>>6=12 格 → 循环平移表恢复映射（同堵转翻 π） */
+                        {
+                            float32 lut_tmp[COGGING_LUT_SIZE];
+                            uint16  cnt_tmp[COGGING_LUT_SIZE];
+                            sint32  shift = (sint32)(ENCODER_RESOLUTION / MOTOR_POLE_PAIRS / 2) >> 6;
+                            for (int ci = 0; ci < COGGING_LUT_SIZE; ci++)
+                            {
+                                lut_tmp[ci] = g_cog_lut[ci];
+                                cnt_tmp[ci] = g_cog_cnt[ci];
+                            }
+                            for (int ci = 0; ci < COGGING_LUT_SIZE; ci++)
+                            {
+                                int ni = (ci - shift + COGGING_LUT_SIZE) % COGGING_LUT_SIZE;
+                                g_cog_lut[ci] = lut_tmp[ni];
+                                g_cog_cnt[ci] = cnt_tmp[ni];
+                            }
+                        }
+                        g_calib_prev_idx = -1;
+                        g_cog_prev_idx = -1;
                         speed_integral = 0.0f;
                         g_iq_ref = -50.0f;
                     }
@@ -713,6 +734,20 @@ int core0_main(void)
                         g_if_flip_cnt = 0;
                         g_if_sync_cnt = 0;
                         g_if_stall_cnt = 0;
+                        /* 失控重启：失控段表数据不可信 → 清表重标定（含覆盖计数） */
+                        for (int ci = 0; ci < COGGING_LUT_SIZE; ci++)
+                        {
+                            g_cog_lut[ci] = 0.0f;
+                            g_cog_cnt[ci] = 0;
+                        }
+                        g_calib_state = 0;
+                        g_cog_state = 0;
+                        g_calib_revs = 0;
+                        g_calib_covered = 0;
+                        g_calib_total_cnt = 0;
+                        g_calib_prev_idx = -1;
+                        g_cog_revs = 0;
+                        g_cog_prev_idx = -1;
                         g_spd_ramp = g_speed_ref;
                     }
                 }
@@ -727,7 +762,12 @@ int core0_main(void)
                  * 避免 e73ae40 窄窗口（|spd-ramp|<1）卡死永不启用 → 无表一顿一顿 */
                 if (g_calib_state == 0 && g_foc_mode == 2 && g_kick == 0 && g_boost_cnt == 0
                     && fabsf(g_speed_ref) >= LOW_SPD_MAX
-                    && fabsf(g_speed_meas) >= fabsf(g_speed_ref) * 0.3f)
+                    && fabsf(g_speed_meas) >= fabsf(g_speed_ref) * 0.3f
+                    && g_speed_meas * g_speed_ref > 0.0f)   /* 方向一致才标定：
+                                                             * 切环瞬间磁场角可能差 π（零偏
+                                                             * 随机）→ 正冲段（spd 与 sref 反向）
+                                                             * 记录会污染表（标的是制动电流非
+                                                             * 齿槽）→ 磁极自检翻 π 纠正后再启动 */
                 {
                     for (int ci = 0; ci < COGGING_LUT_SIZE; ci++)
                     {
@@ -736,6 +776,8 @@ int core0_main(void)
                     }
                     g_cog_state = 1;
                     g_calib_revs = 0;
+                    g_calib_covered = 0;
+                    g_calib_total_cnt = 0;
                     g_calib_prev_idx = -1;
                     g_calib_state = 1;
                 }
@@ -903,13 +945,25 @@ int core0_main(void)
                     sint32 cidx = (g_mech >> 6) & (COGGING_LUT_SIZE - 1);
                     if (fabsf(g_speed_meas) >= fabsf(g_speed_ref) * 0.3f
                         && fabsf(g_speed_meas) <= fabsf(g_speed_ref) * 1.5f
-                        && fabsf(g_iq_ref) < 120.0f && g_kick == 0 && g_boost_cnt == 0)
+                        && fabsf(g_iq_ref) < 120.0f && g_kick == 0 && g_boost_cnt == 0
+                        && g_speed_meas * g_speed_ref > 0.0f)   /* 方向一致才记录：
+                                                                 * 切环正冲/反向段电流是制动或
+                                                                 * 加速动态分量，非齿槽 → 排除，
+                                                                 * 否则表被污染（v5 实测表启用后
+                                                                 * 反而加剧摆动） */
                     {
                         g_cog_lut[cidx] += g_iq_ref;
+                        if (g_cog_cnt[cidx] == 0) g_calib_covered++; /* 首次覆盖该索引
+                                                                      * （方向无关圈数判据） */
                         if (g_cog_cnt[cidx] < 0xFFFFu) g_cog_cnt[cidx]++;
-                        if (g_calib_prev_idx >= 0 && cidx > g_calib_prev_idx) g_calib_revs++;
+                        g_calib_total_cnt++;
                         g_calib_prev_idx = cidx;
-                        if (g_calib_revs >= CALIB_REVS_NEED)
+                        /* 覆盖满 256 索引（1 圈全覆盖）且总样本 ≥ 256×2（2 圈量）
+                         * → 表覆盖完整、噪声平均充分。正转/负转/回绕均正确，
+                         * 不受切环正冲影响（旧 cidx>prev 判据在正转时每次记录都
+                         * 计数 → 不到 1 圈就误判 2 圈完成 → 表=半圈数据污染） */
+                        if (g_calib_covered >= COGGING_LUT_SIZE
+                            && g_calib_total_cnt >= (uint32)COGGING_LUT_SIZE * CALIB_REVS_NEED)
                         {
                             float32 gsum = 0.0f;
                             uint32 gcnt = 0;
