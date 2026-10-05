@@ -949,15 +949,18 @@ int core0_main(void)
                 {
                     /* 学习被打断（kick/堵转）：暂不计数，等恢复 */
                 }
-                /* 标定记录：0.3~1.5×|sref| 窗口（同 1162bb6 已验证学习窗口）——
-                 * 超速刹车段（>1.5×）与预充/堵转段（<0.3× 或 iq 饱和）自动排除；
-                 * 波动循环中掉速-冲出对称，平均后动态分量抵消 → 表≈齿槽差值。
-                 * 2 圈 → 平均 → 减全局均值 → 启用齿槽前馈 */
+                /* 标定记录：0.85~1.15×|sref| 稳态窗（v9 从 0.3~1.5 收窄）——
+                 * v8 实测 CALIB_DONE 覆盖的 2.5 圈 = 加速段 +1.5 圈（iq_ref -90~-107）
+                 * + 掉速段 -1.0 圈（iq_ref -64~-110）→ 全程无稳态 → 加速/制动电流
+                 * 混入表 → 表≈速度环均值+噪声 → 启用后波动仍 ±9%（-1097~-1318）。
+                 * 0.85~1.15 只采真稳态：无表期波动已实测在 [1097,1318] ⊂ [1018,1378]，
+                 * 命中率高；稳态 2 圈 ≈ 17 行（cidx 回绕计数每圈 1 次）≈ 1 秒完成。
+                 * 超速段（>1.15×）与掉速/预充段（<0.85× 或 iq 饱和）自动排除 */
                 if (g_calib_state == 1)
                 {
                     sint32 cidx = (g_mech >> 6) & (COGGING_LUT_SIZE - 1);
-                    if (fabsf(g_speed_meas) >= fabsf(g_speed_ref) * 0.3f
-                        && fabsf(g_speed_meas) <= fabsf(g_speed_ref) * 1.5f
+                    if (fabsf(g_speed_meas) >= fabsf(g_speed_ref) * 0.85f
+                        && fabsf(g_speed_meas) <= fabsf(g_speed_ref) * 1.15f
                         && fabsf(g_iq_ref) < 120.0f && g_kick == 0 && g_boost_cnt == 0
                         && g_speed_meas * g_speed_ref > 0.0f)   /* 方向一致才记录：
                                                                  * 切环正冲/反向段电流是制动或
@@ -1040,7 +1043,8 @@ int core0_main(void)
         }
 
         print_cnt++;
-        if (print_cnt >= 2000)   /* 每 2000 次主循环 ≈100ms/行，降串口负载防助手崩溃（原 500≈25ms/行） */
+        if (print_cnt >= 4000)   /* 每 4000 次主循环 ≈200ms/行（v9 从 2000 放宽：用户反馈
+                                  * "串口数据太快看不见 CALIB_DONE"） */
         {
             print_cnt = 0;
             FOC_UART_Print("md="); FOC_UART_PrintInt((sint32)g_foc_mode);
