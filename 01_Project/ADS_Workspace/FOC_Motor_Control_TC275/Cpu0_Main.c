@@ -580,10 +580,16 @@ int core0_main(void)
                         g_sweep_iq = (g_speed_ref < 0.0f) ? -SWEEP_IREF : SWEEP_IREF;
                         g_sweep_dir = (g_speed_ref < 0.0f) ? -1.0f : 1.0f;
                     }
-                    else if (++g_kick_timer >= 400)   /* 直推 2s 转子仍不动 → 超强齿槽，
-                                                       * 1.7A 是单相上限 → 失败冷却重试 */
+                    else if (++g_kick_timer >= 400)   /* 直推 2s 转子仍不动 → 超强齿槽或磁极反，
+                                                       * 1.7A 是单相上限 → 翻 π 换向再试 */
                     {
                         g_kick = 0;
+                        g_mech += (sint32)ENCODER_RESOLUTION / MOTOR_POLE_PAIRS / 2;  /* 翻 π：
+                                                                                       * 若磁极反导致
+                                                                                       * 直推反力矩压死，
+                                                                                       * 换 180° 方向重试
+                                                                                       * 即冲出（同方向冷却
+                                                                                       * 重试永远失败） */
                         g_spd_ramp = g_speed_ref;
                         if (++g_kick_fail >= KICK_FAIL_MAX)
                         {
@@ -729,12 +735,12 @@ int core0_main(void)
                  * （spd ±400 交替、vq 恒 -500 饱和，0.2~0.4s 周期），无收敛 → "左右晃幅度大" */
                 float32 spd_delta = g_speed_meas - g_spd_prev;
                 g_spd_prev = g_speed_meas;
-                /* 方向自检：spd 与 sref 明显反向且转子在转 → 参考系/磁极反 180° →
-                 * iq 负产生正力矩（实测 b8efcb6 正转 5.7 圈）。检测到即翻转全部力矩输出，
-                 * 转子被拉回正确方向，稳态自动维持（翻转不解除） */
-                if (g_speed_meas * g_speed_ref < -20.0f && fabsf(g_speed_meas) > 1.5f)
-                    g_dir_flip = 1;   /* 阈值 2.0→1.5：切环正冲 +316 约 0.3s(实测)，早 1 窗
-                                       * 翻转 → 正冲窗口更短，纠正更快 */
+                /* 方向自检 → 由下方磁极自检（20 窗翻 π）统一处理。
+                 * 原 g_dir_flip 瞬时触发 + 永锁存：加速途中 spd 瞬时反向（齿槽反弹/
+                 * 编码器抖动）即误触发 → 输出取反 → 反向力矩 → 电机减速卡死 →
+                 * 兜底（预充/直推）也取反 → 永久死锁（2cbcdb0 实测 MAX 档 ang 恒定、
+                 * iqr -150/-110 交替推不动）。删除瞬时触发；磁极自检 20 窗过滤抖动，
+                 * 真实反向才翻 π。g_dir_flip 变量保留恒 0（下方取反逻辑自然失效）。 */
                 float32 new_iq;
                 /* 超速（同向超出目标 0.5）：纯比例强刹 + D 阻尼，防深负积分抵消刹车。
                  * 此前积分深负（-400，0.04×(-400)=-16）压过 Kp(+3) → 超速还加速 →
