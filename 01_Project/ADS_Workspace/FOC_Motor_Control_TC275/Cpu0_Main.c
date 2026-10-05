@@ -590,6 +590,29 @@ int core0_main(void)
                                                                                        * 换 180° 方向重试
                                                                                        * 即冲出（同方向冷却
                                                                                        * 重试永远失败） */
+                        /* 翻 π 使机械角偏移 819 码 → 齿槽表索引 (g_mech>>6) 偏移
+                         * 819>>6=12 格 → 循环平移表恢复映射（保留学习进度，避免清表
+                         * 重启 + 堵转频繁 → 标定永远完不成）；revs 保持（转子物理上
+                         * 没转，圈数不变），prev=-1 防翻 π 跳变误计圈数
+                         * （cidx 跳 +12 会误判一整圈） */
+                        {
+                            float32 lut_tmp[COGGING_LUT_SIZE];
+                            uint16  cnt_tmp[COGGING_LUT_SIZE];
+                            sint32  shift = (sint32)(ENCODER_RESOLUTION / MOTOR_POLE_PAIRS / 2) >> 6;
+                            for (int ci = 0; ci < COGGING_LUT_SIZE; ci++)
+                            {
+                                lut_tmp[ci] = g_cog_lut[ci];
+                                cnt_tmp[ci] = g_cog_cnt[ci];
+                            }
+                            for (int ci = 0; ci < COGGING_LUT_SIZE; ci++)
+                            {
+                                int ni = (ci - shift + COGGING_LUT_SIZE) % COGGING_LUT_SIZE;
+                                g_cog_lut[ci] = lut_tmp[ni];
+                                g_cog_cnt[ci] = cnt_tmp[ni];
+                            }
+                        }
+                        g_calib_prev_idx = -1;
+                        g_cog_prev_idx = -1;
                         g_spd_ramp = g_speed_ref;
                         if (++g_kick_fail >= KICK_FAIL_MAX)
                         {
@@ -703,7 +726,7 @@ int core0_main(void)
                  * 已验证学习窗口）——无表期波动循环（掉速-冲出）中也能 2 圈快速完成，
                  * 避免 e73ae40 窄窗口（|spd-ramp|<1）卡死永不启用 → 无表一顿一顿 */
                 if (g_calib_state == 0 && g_foc_mode == 2 && g_kick == 0 && g_boost_cnt == 0
-                    && g_kick_fail < KICK_FAIL_MAX && fabsf(g_speed_ref) >= LOW_SPD_MAX
+                    && fabsf(g_speed_ref) >= LOW_SPD_MAX
                     && fabsf(g_speed_meas) >= fabsf(g_speed_ref) * 0.3f)
                 {
                     for (int ci = 0; ci < COGGING_LUT_SIZE; ci++)
