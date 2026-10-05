@@ -65,6 +65,19 @@ static volatile float32 g_cog_fb = 0;               /* ISR 补偿前馈值 */
                              * 加速段/超速段大幅值，1.2 放大后超速刹车 +150 被 LUT -150 抵消
                              * → 刹不住 → 失控。回 1.0 保 b3a6175 已验证的 ±8%；干净表见下 */
 
+/* ---- 治本第 1 步：低速爬行标定（精确齿槽表，替代 5 圈学习） ----
+ * 原理：切环后闭环 10 rad/s 匀速爬行 2 圈（≥LOW_SPD_MAX=4 走速度环），
+ * 匀速段（无超速/预充/饱和）电流 ≈ 前馈 + 齿槽响应 → 减均值 = 齿槽差值表。
+ * 无 5 圈学习"加速段/刹车段污染"缺陷（c257a05 实测：表污染 → 超速处负补偿
+ * 抵消刹车 → 刹不住冲到 -1759 → 掉速趋停 → 正反馈崩溃），表质量高 → 全速段有效。 */
+#define CALIB_CRAWL_SPD   (-1000.0f)  /* 10 rad/s：闭环区（>4 rad/s）且齿槽影响仍可测 */
+#define CALIB_REVS_NEED   2           /* 2 圈 ≈ 33s（16384 码/1000 码/s） */
+#define CALIB_REC_LO      850.0f      /* 匀速窗口 |spd| ∈ [0.85,1.15]×1000 */
+#define CALIB_REC_HI      1150.0f
+static volatile uint8  g_calib_state = 0;   /* 0=off 1=爬行标定 2=完成 */
+static uint16          g_calib_revs = 0;
+static sint32          g_calib_prev_idx = -1;
+
 static uint16 g_offA = 2050;
 static uint16 g_offB = 2044;
 static uint16 g_offC = 2040;
@@ -679,6 +692,24 @@ int core0_main(void)
                 {
                     g_ovspd_cnt = 0;
                 }
+                /* 治本标定：切环稳态（md=2、非 kick/boost）进入爬行标定——
+                 * 清表、占位 g_cog_state=1（防现有 5 圈学习清表覆盖）、锁爬行目标 */
+                if (g_calib_state == 0 && g_foc_mode == 2 && g_kick == 0 && g_boost_cnt == 0
+                    && g_kick_fail < KICK_FAIL_MAX)
+                {
+                    for (int ci = 0; ci < COGGING_LUT_SIZE; ci++)
+                    {
+                        g_cog_lut[ci] = 0.0f;
+                        g_cog_cnt[ci] = 0;
+                    }
+                    g_cog_state = 1;
+                    g_calib_revs = 0;
+                    g_calib_prev_idx = -1;
+                    g_calib_state = 1;
+                }
+                if (g_calib_state == 1) g_speed_ref = CALIB_CRAWL_SPD;  /* 爬行期锁目标（本 ISR 生效，
+                                                                          * 主循环旋钮映射每 ISR 被覆盖） */
+
                 /* 速度环目标斜坡：每 5ms 爬 0.15 rad/s（30 rad/s²），目标 8 需 0.27s。
                  * 启动时误差始终小 → 力矩温和 → 不过冲不反向振荡 */
                 float32 ramp_delta = g_speed_ref - g_spd_ramp;
@@ -777,7 +808,7 @@ int core0_main(void)
                 /* 齿槽 LUT 自动学习（运行中后台进行，无需用户操作）：
                  * md=2 稳定闭环段（非 kick/boost 期）按机械角累计 g_iq_ref，
                  * 转满 COGGING_REVS_REQUIRED 圈 → 平均 → 减全局均值 → 启用前馈。 */
-                if (g_cog_state < 2 && g_kick == 0 && g_boost_cnt == 0
+                if (g_calib_state != 1 && g_cog_state < 2 && g_kick == 0 && g_boost_cnt == 0
                     && g_kick_fail < KICK_FAIL_MAX && fabsf(g_speed_ref) >= LOW_SPD_MAX
                     && fabsf(g_speed_meas) >= fabsf(g_speed_ref) * 0.3f   /* 排除切环后加速段污染
                                                                            * （spd 远低于目标，g_iq_ref
@@ -832,6 +863,40 @@ int core0_main(void)
                 else if (g_cog_state == 1)
                 {
                     /* 学习被打断（kick/堵转）：暂不计数，等恢复 */
+                }
+                /* 标定记录：匀速段（|spd|∈[850,1150] 且 iq 未饱和）电流 → 表；
+                 * 2 圈 → 平均 → 减全局均值 → 启用齿槽前馈 */
+                if (g_calib_state == 1)
+                {
+                    sint32 cidx = (g_mech >> 6) & (COGGING_LUT_SIZE - 1);
+                    if (fabsf(g_speed_meas) > CALIB_REC_LO && fabsf(g_speed_meas) < CALIB_REC_HI
+                        && fabsf(g_iq_ref) < 120.0f && g_kick == 0 && g_boost_cnt == 0)
+                    {
+                        g_cog_lut[cidx] += g_iq_ref;
+                        if (g_cog_cnt[cidx] < 0xFFFFu) g_cog_cnt[cidx]++;
+                        if (g_calib_prev_idx >= 0 && cidx > g_calib_prev_idx) g_calib_revs++;
+                        g_calib_prev_idx = cidx;
+                        if (g_calib_revs >= CALIB_REVS_NEED)
+                        {
+                            float32 gsum = 0.0f;
+                            uint32 gcnt = 0;
+                            for (int ci = 0; ci < COGGING_LUT_SIZE; ci++)
+                            {
+                                if (g_cog_cnt[ci] > 0)
+                                {
+                                    g_cog_lut[ci] /= g_cog_cnt[ci];
+                                    gsum += g_cog_lut[ci];
+                                    gcnt++;
+                                }
+                            }
+                            if (gcnt > 0) gsum /= (float32)gcnt;
+                            for (int ci = 0; ci < COGGING_LUT_SIZE; ci++)
+                                g_cog_lut[ci] -= gsum;   /* 存相对平均差值 */
+                            g_cog_state = 2;
+                            g_calib_state = 2;
+                            FOC_UART_Print("\r\nCALIB_DONE\r\n");
+                        }
+                    }
                 }
                 /* 运行期补偿前馈值（ISR 读取） */
                 g_cog_fb = (g_cog_state == 2) ? g_cog_lut[(g_mech >> 6) & (COGGING_LUT_SIZE - 1)] * COGGING_GAIN : 0.0f;
