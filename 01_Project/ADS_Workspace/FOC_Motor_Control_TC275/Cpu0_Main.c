@@ -152,7 +152,9 @@ static uint16 g_pole_chk_cnt = 0;              /* 磁极方向自检连续窗计
 #define SWEEP_IREF     150.0f  /* 拖动/脱困 q 电流 ≈1.7A（3A 电源内，单相 1.7A<3A 安全）。
                                 * 130(1.5A) 在最强齿槽位(实测 -213k/-873k)拖停后扫角
                                 * 需 1.5s 恢复；150 冲力更大一次冲过概率高 → 卡位更短 */
-#define SWEEP_EXIT_SPD 0.5f    /* 脱困成功判定：转子动起来 */
+#define SWEEP_EXIT_SPD 5.0f    /* 脱困成功判定：直推 1.7A 把转子推到 5 rad/s（冲出齿槽区、
+                                * 带动能）才交还速度环——原 0.5 刚动就退出，速度环
+                                * -81~-110（0.93~1.26A < 齿槽 ~1.5A）推不动 → 又卡又堵循环 */
 #define KICK_FAIL_MAX  3       /* 连续失败 3 次 → 冷却 2 秒自动重试（无需回零） */
 #define FAIL_COOL_WINDOWS 400  /* 冷却窗 = 400×5ms = 2s */
 #define BASE_SPEED     8.0f    /* 旋钮 0% 基础转速 rad/s（≈76 RPM，闭环稳定区起步） */
@@ -710,6 +712,23 @@ int core0_main(void)
                         g_cog_prev_idx = -1;
                         speed_integral = 0.0f;
                         g_iq_ref = -50.0f;
+                        /* 翻 π 后直接进堵转脱困直推（1.7A 垂直磁场）快速冲出齿槽区，
+                         * 而非交还速度环——v7 实测翻 π 后速度环 -81~-110（0.93~1.26A
+                         * < 齿槽 ~1.5A）推不动强齿槽位 → 慢速卡 → 又堵转 → 死循环，
+                         * 标定 0 样本 → 永无 CALIB_DONE。直推到 SWEEP_EXIT_SPD(5 rad/s)
+                         * 转子带动能 → 交还速度环可维持/加速 → 稳态 → 标定 2 圈完成 */
+                        g_kick = 1;
+                        g_sweep_mode = 1;
+                        g_sweep_angle = g_elec_angle;
+                        g_sweep_start = g_elec_angle;
+                        g_sweep_dir = (g_speed_ref < 0.0f) ? -1.0f : 1.0f;
+                        g_sweep_iq = (g_speed_ref < 0.0f) ? -SWEEP_IREF : SWEEP_IREF;
+                        g_sweep_spd = SWEEP_SPD;
+                        g_kick_timer = 0;
+                        g_pole_chk_cnt = 0;   /* 直推中不再自检 */
+                        g_stall_cnt = 0;
+                        speed_updated = 0;
+                        continue;   /* 本窗直接进直推，不再走速度环 */
                     }
                 }
                 else
